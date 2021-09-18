@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -12,6 +13,7 @@ namespace Office_Automation.Extensions.ControllerExtensions
     {
         public object CreateController(ControllerContext context)
         {
+            Stopwatch sw = Stopwatch.StartNew();
             // 获取当前控制器实例
             var Controller = ActivatorUtilities.CreateInstance(context.HttpContext.RequestServices, context.ActionDescriptor.ControllerTypeInfo);
             // 循环当前控制器实例的属性
@@ -32,6 +34,8 @@ namespace Office_Automation.Extensions.ControllerExtensions
                     Prop.SetValue(Controller, Services.ElementAt(ServiceIndex));
                 }
             }
+            sw.Stop();
+            Console.WriteLine($"属性注入耗费毫秒：{sw.ElapsedMilliseconds}");
             return Controller;
         }
 
