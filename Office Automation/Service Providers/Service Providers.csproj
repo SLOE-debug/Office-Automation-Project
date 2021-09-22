@@ -7,6 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="C:\Users\c0375.LINDAPATENT1009\.nuget\packages\mysql.data.entityframework\8.0.26\contentFiles\any\netstandard2.1\app.config.transform" />
+    <Content Remove="C:\Users\c0375.LINDAPATENT1009\.nuget\packages\mysql.data.entityframework\8.0.26\contentFiles\any\netstandard2.1\web.config.transform" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="EntityFramework" Version="6.4.4" />
     <PackageReference Include="MySql.Data.EntityFramework" Version="8.0.26" />
   </ItemGroup>

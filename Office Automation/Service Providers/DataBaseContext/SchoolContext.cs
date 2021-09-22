@@ -17,6 +17,7 @@ namespace Service_Providers.DataBaseContext
     /// 将数据库上下文作为服务注入
     /// </summary>
     [Service]
+    // 指定当前上下文类使用的 应用程序实体框架配置 “实体配置”即代码的方式编写的配置
     [DbConfigurationType(typeof(CustomDBConfiguration))]
     public class SchoolContext : DbContext
     {
@@ -31,7 +32,6 @@ namespace Service_Providers.DataBaseContext
 
         /// <summary>
         /// 使用该类型在首次访问数据库时！！！！！！！首次访问数据库时，而非首次创建
-        /// 
         /// 在绑定模型之前会调用该方法，我们这里来重写该方法将模型绑定到该上下文
         /// </summary>
         /// <param name="modelBuilder"></param>
