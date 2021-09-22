@@ -16,8 +16,9 @@ namespace Office_Automation.Extensions.ControllerExtensions
             Stopwatch sw = Stopwatch.StartNew();
             // 获取当前控制器实例
             var Controller = ActivatorUtilities.CreateInstance(context.HttpContext.RequestServices, context.ActionDescriptor.ControllerTypeInfo);
+
             // 循环当前控制器实例的属性
-            foreach (var Prop in Controller.GetType().GetProperties())
+            foreach (var Prop in Controller.GetType().GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public))
             {
                 // 获取属性自定义特性
                 var AutoAnalysisAttr = (AutoAnalysisAttribute)Attribute.GetCustomAttributes(Prop, typeof(AutoAnalysisAttribute)).FirstOrDefault();

@@ -48,9 +48,24 @@ namespace Office_Automation.Extensions
                         }
                         else
                         {
-                            typeof(ServiceCollectionServiceExtensions).GetMethod($"Add{ServiceAttr.Lifecycle}", 1, new Type[] { services.GetType() })
-                                    .MakeGenericMethod(t)
-                                    .Invoke(services, new object[] { services });
+                            MethodInfo Load = t.GetMethod("Load", BindingFlags.Static | BindingFlags.Public);
+                            List<Type> paramsTypes = new List<Type> { services.GetType(), typeof(Type) };
+                            if (Load != null)
+                            {
+                                paramsTypes.Add(typeof(Func<IServiceProvider, object>));
+                            }
+
+                            var addMethod = typeof(ServiceCollectionServiceExtensions).GetMethod($"Add{ServiceAttr.Lifecycle}", paramsTypes.ToArray());
+                            Type type = typeof(Func<IServiceCollection, Type, IServiceCollection>);
+                            List<object> @params = new List<object>() { services, t };
+                            if (Load != null)
+                            {
+                                type = typeof(Func<IServiceCollection, Type, Func<IServiceProvider, object>, IServiceCollection>);
+                                @params.Add(Delegate.CreateDelegate(typeof(Func<IServiceProvider, object>), Load));
+                            }
+                            var add = Delegate.CreateDelegate(type, addMethod);
+                            add.DynamicInvoke(@params.ToArray());
+
                             Console.WriteLine($"注入没有接口的类：{t.FullName}，服务生命周期：{ServiceAttr.Lifecycle}");
                         }
                         continue;
@@ -64,15 +79,6 @@ namespace Office_Automation.Extensions
                             // 如果 服务键值对 中包含当前接口，那么将会按照当前接口及当前类型做依赖注入
                             if (ServiceInterface.ContainsKey(Inherited))
                             {
-                                //// 获取相对应的泛型参数的方法，new Type[] { services.GetType() }这里可以查看 services.AddScoped 的方法列表，里面有一个 this IServiceCollection services 参数，也就是说他不是空的
-                                //typeof(ServiceCollectionServiceExtensions).GetMethod($"Add{ServiceInterface[Inherited].Lifecycle}", 2, new Type[] { services.GetType() })
-                                // // 填入相对应的泛型参数
-                                // .MakeGenericMethod(Inherited, t)
-                                // // 执行方法
-                                // .Invoke(services, new object[] { services });
-                                //services.AddScoped
-                                //DynamicMethod hello = new DynamicMethod("", typeof(int), helloArgs, typeof(string).Module)
-
                                 // 获取相对应的泛型参数的方法，new Type[] { services.GetType() }这里可以查看 services.AddScoped 的方法列表，里面有一个 this IServiceCollection services 参数，也就是说他不是空的
                                 MethodInfo addMethod = typeof(ServiceCollectionServiceExtensions).GetMethod($"Add{ServiceInterface[Inherited].Lifecycle}", 2, new Type[] { services.GetType() })
                                  // 填入相对应的泛型参数
