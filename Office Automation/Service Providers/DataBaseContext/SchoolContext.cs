@@ -9,7 +9,9 @@ using System.Data.Common;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Data.Entity.SqlServer;
+using System.Data.SqlClient;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace Service_Providers.DataBaseContext
 {
@@ -58,6 +60,11 @@ namespace Service_Providers.DataBaseContext
             base.OnModelCreating(modelBuilder);
         }
 
+        private static readonly Dictionary<string, Type> ConnTypes = new Dictionary<string, Type>() {
+            { "MySql.Data.MySqlClient", typeof(MySqlConnection) },
+            { "System.Data.SqlClient", typeof(SqlConnection) }
+        };
+
         /// <summary>
         /// 如果需要自定义一个类的初始化过程，那么可以声明Load方法，该方法必须是：静态的、公开的。
         /// </summary>
@@ -65,7 +72,12 @@ namespace Service_Providers.DataBaseContext
         /// <returns>返回当前类型实例</returns>
         public static SchoolContext Load(IServiceProvider services)
         {
-            MySqlConnection conn = new MySqlConnection(ConfigurationManager.ConnectionStrings["Constr"].ToString());
+            DbConnection conn;
+            string providerName = ConfigurationManager.ConnectionStrings["Constr"].ProviderName;
+            string ConStr = ConfigurationManager.ConnectionStrings["Constr"].ToString();
+            if (!ConnTypes.ContainsKey(providerName)) throw new Exception("未找到相对应的数据库连接提供商！");
+            LambdaExpression GetConn = Expression.Lambda(Expression.New(ConnTypes[providerName].GetConstructor(new Type[] { typeof(string) }), Expression.Constant(ConStr, typeof(string))));
+            conn = ((Func<DbConnection>)GetConn.Compile())();
             return new SchoolContext(conn);
         }
     }

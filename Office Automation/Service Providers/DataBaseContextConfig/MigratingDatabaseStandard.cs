@@ -19,6 +19,7 @@ namespace Service_Providers.DataBaseContextConfig
         {
             // 指定迁移期间，是否可以接收数据丢失，如果设置为false那么将会触发异常
             // 数据丢失情况一：当新增一个列或修改一个列时，将可为空变成了不可为空，那么这时候将会丢失一些数据
+            // 数据丢失情况二：当删除一个现有的列时，那么这时候将会丢失一些数据
             AutomaticMigrationDataLossAllowed = false;
             // 指示迁移数据库时是否可以使用自动迁移
             AutomaticMigrationsEnabled = true;
