@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 namespace Office_Automation.Extensions.ControllerExtensions
@@ -13,7 +14,7 @@ namespace Office_Automation.Extensions.ControllerExtensions
     {
         public object CreateController(ControllerContext context)
         {
-            Stopwatch sw = Stopwatch.StartNew();
+            //Stopwatch sw = Stopwatch.StartNew();
             // 获取当前控制器实例
             var Controller = ActivatorUtilities.CreateInstance(context.HttpContext.RequestServices, context.ActionDescriptor.ControllerTypeInfo);
 
@@ -35,8 +36,8 @@ namespace Office_Automation.Extensions.ControllerExtensions
                     Prop.SetValue(Controller, Services.ElementAt(ServiceIndex));
                 }
             }
-            sw.Stop();
-            Console.WriteLine($"属性注入耗费毫秒：{sw.ElapsedMilliseconds}");
+            //sw.Stop();
+            //Console.WriteLine($"属性注入耗费毫秒：{sw.ElapsedMilliseconds}");
             return Controller;
         }
 

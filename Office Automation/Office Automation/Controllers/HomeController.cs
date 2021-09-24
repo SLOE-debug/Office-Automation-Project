@@ -1,15 +1,23 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Office_Automation.Extensions.ControllerExtensions;
 using Service_Providers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.IdentityModel.Tokens;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Util;
 
 namespace Office_Automation.Controllers
 {
     [ApiController]
     [Route("[controller]")]
+    [Authorize]
     public class HomeController : ControllerBase
     {
         [AutoAnalysis]
@@ -20,6 +28,16 @@ namespace Office_Automation.Controllers
         [AutoAnalysis]
         public SchoolService school { get; set; }
 
+        [AutoAnalysis]
+        public SecurityTokenGenerator securityTokenGenerator { get; set; }
+
+        [HttpGet]
+        [Route("getToken")]
+        [AllowAnonymous]
+        public string GetToken()
+        {
+            return securityTokenGenerator.CreateToken();
+        }
         [HttpGet]
         public string Get(string name)
         {

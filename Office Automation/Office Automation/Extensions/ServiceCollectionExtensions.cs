@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.OpenApi.Models;
 using Office_Automation.Extensions.ControllerExtensions;
 using Service_Provider_Extensions;
 using Service_Providers.DataBaseContext;
@@ -93,6 +94,43 @@ namespace Office_Automation.Extensions
             }
             sw.Stop();
             Console.WriteLine($"服务注册耗费毫秒：{sw.ElapsedMilliseconds}");
+            return services;
+        }
+        public static IServiceCollection AddSwaager(this IServiceCollection services)
+        {
+            services.AddSwaggerGen(option =>
+            {
+                option.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Version = "v1",
+                    Title = "Office Automation API",
+                    Description = "Office Automation 接口API",
+                });
+                // 添加 JWT Bearer 安全定义
+                option.AddSecurityDefinition("JWT", new OpenApiSecurityScheme
+                {
+                    Description = "在请求头中使用JWT验证\r\n\r\n 这将在请求头中添加一项（Bearer：XXXXX）\r\n\r\n请您在下方的Value输入框内键入您得到的Token",
+                    Name = "Authorization",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "Bearer",
+                }); ;
+                // 添加全局的安全定义使用
+                option.AddSecurityRequirement(new OpenApiSecurityRequirement()
+                {
+                    {
+                         new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "JWT" // 该ID要对应 安全定义 的名称
+                            },
+                        },
+                        new List<string>()
+                    }
+                });
+            });
             return services;
         }
     }

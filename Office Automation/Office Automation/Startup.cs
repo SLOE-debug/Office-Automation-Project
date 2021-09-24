@@ -1,11 +1,13 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.OpenApi.Models;
+using Microsoft.IdentityModel.Tokens;
 using Office_Automation.Extensions;
 using Office_Automation.Extensions.ResponseExtensions;
+using Util;
 
 namespace Office_Automation
 {
@@ -17,17 +19,10 @@ namespace Office_Automation
             {
                 option.OutputFormatters.Insert(0, new OutputFormatting());
             });
-            services.AddSwaggerGen(option =>
-            {
-                option.SwaggerDoc("v1", new OpenApiInfo
-                {
-                    Version = "v1",
-                    Title = "Office Automation API",
-                    Description = "Office Automation ½Ó¿ÚAPI",
-                });
-            });
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, SecurityTokenGenerator.ValidationRules);
             services.AddAutoAnalysis();
             services.AddAutoInject();
+            services.AddSwaager();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IConfiguration configuration)
@@ -35,7 +30,10 @@ namespace Office_Automation
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                //app.UseErrorHandlingCenter();
+            }
+            else
+            {
+                app.UseErrorHandlingCenter();
             }
 
             app.UseSwagger();
@@ -46,6 +44,10 @@ namespace Office_Automation
             });
 
             app.UseRouting();
+
+            app.UseAuthentication();
+            app.UseAuthorization();
+
 
             app.UseEndpoints(endpoints =>
             {
