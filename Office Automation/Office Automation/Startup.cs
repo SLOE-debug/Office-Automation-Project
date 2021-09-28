@@ -13,6 +13,11 @@ namespace Office_Automation
 {
     public class Startup
     {
+        private IConfiguration configuration;
+        public Startup(IConfiguration _configuration)
+        {
+            configuration = _configuration;
+        }
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers(option =>

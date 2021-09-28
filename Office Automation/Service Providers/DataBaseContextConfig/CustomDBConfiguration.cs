@@ -1,5 +1,6 @@
 ﻿using MySql.Data.EntityFramework;
 using MySql.Data.MySqlClient;
+using Service_Provider_Extensions;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
@@ -7,6 +8,7 @@ using System.Data.Entity;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Util;
 
 namespace Service_Providers.DataBaseContextConfig
 {
@@ -24,6 +26,8 @@ namespace Service_Providers.DataBaseContextConfig
             SetProviderFactory("MySql.Data.MySqlClient", new MySqlClientFactory());
             // 设置指定的数据库提供程序的服务类
             SetProviderServices("MySql.Data.MySqlClient", new MySqlProviderServices());
+            // 添加命令拦截器，为了缓存
+            AddInterceptor(new AccessInterceptor(ProviderCenter.GetService<RedisCache>()));
         }
     }
 }

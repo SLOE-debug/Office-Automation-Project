@@ -1,6 +1,7 @@
 ﻿using MySql.Data.MySqlClient;
 using Service_Provider_Extensions;
 using Service_Providers.DataBaseContextConfig;
+using Service_Providers.Models;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -12,6 +13,7 @@ using System.Data.Entity.SqlServer;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Linq.Expressions;
+
 
 namespace Service_Providers.DataBaseContext
 {
@@ -29,7 +31,6 @@ namespace Service_Providers.DataBaseContext
         /// <param name="conn">数据库连接</param>
         public SchoolContext(DbConnection conn) : base(conn, true)
         {
-            Console.WriteLine(((IObjectContextAdapter)this).ObjectContext.DatabaseExists());
         }
 
         /// <summary>
@@ -47,13 +48,13 @@ namespace Service_Providers.DataBaseContext
 
             // 以下展示两种设置，他们用来设置要用于给定上下文类型的数据库初始值设定项
             // 本示例传递 MigrateDatabaseToLatestVersion 对象表示对该上下文每次都使用自动迁移，如果 数据库实体 与当前 Code实体 不一致，那么将以 Code实体 去迁移数据库
-            Database.SetInitializer<SchoolContext>(new MigrateDatabaseToLatestVersion<SchoolContext, MigratingDatabaseStandard>());
+            Database.SetInitializer(new MigrateDatabaseToLatestVersion<SchoolContext, MigratingDatabaseStandard>());
 
             // 与上相反，对该上下文类型禁用初始化
             //Database.SetInitializer<SchoolContext>(null);
 
             // 循环当前类库中的所有在 Models命名空间 下的类型，将它们注入到上下文实体中
-            foreach (var item in from t in typeof(SchoolContext).Assembly.GetTypes().ToList() where t.Namespace == "Service_Providers.Models" select t)
+            foreach (var item in from t in typeof(SchoolContext).Assembly.GetTypes() where t.Namespace == "Service_Providers.Models" select t)
             {
                 modelBuilder.RegisterEntityType(item);
             }

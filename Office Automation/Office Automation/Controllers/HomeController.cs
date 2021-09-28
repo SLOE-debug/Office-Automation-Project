@@ -12,6 +12,7 @@ using System.IdentityModel.Tokens;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Util;
+using Service_Providers.Models;
 
 namespace Office_Automation.Controllers
 {
@@ -42,6 +43,13 @@ namespace Office_Automation.Controllers
         public string Get(string name)
         {
             return stu.WriteMessage("张三") + stu2.WriteMessage("李四") + school.GetSchoolName("天津工业大学");
+        }
+
+        [HttpGet]
+        [Route("getBlogs")]
+        public List<Blog> GetBlogs()
+        {
+            return school.GetBlogs();
         }
 
         [HttpGet]

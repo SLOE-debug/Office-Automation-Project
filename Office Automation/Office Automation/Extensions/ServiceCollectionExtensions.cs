@@ -28,7 +28,7 @@ namespace Office_Automation.Extensions
         {
             Stopwatch sw = Stopwatch.StartNew();
             // 获取项目已引入的项目中所有类库的信息
-            List<AssemblyName> refassemblys = typeof(ServiceCollectionExtensions).Assembly.GetReferencedAssemblies().Where(b => b.GetPublicKeyToken().Length == 0).ToList();
+            IEnumerable<AssemblyName> refassemblys = typeof(ServiceCollectionExtensions).Assembly.GetReferencedAssemblies().Where(b => b.GetPublicKeyToken().Length == 0);
             foreach (var assemblyName in refassemblys)
             {
                 // 做一个键值对存储 被作为服务的接口及生命周期

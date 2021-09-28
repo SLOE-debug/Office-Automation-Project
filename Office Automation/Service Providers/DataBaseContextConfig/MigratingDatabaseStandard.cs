@@ -1,5 +1,6 @@
 ﻿using MySql.Data.EntityFramework;
 using Service_Providers.DataBaseContext;
+using Service_Providers.Models;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity.Migrations;
@@ -29,6 +30,12 @@ namespace Service_Providers.DataBaseContextConfig
             MigrationsNamespace = "Service_Providers.Models";
             // 为 MySql.Data.MySqlClient 提供程序声明 sql语句生成器，以便生成代码用于迁移
             SetSqlGenerator("MySql.Data.MySqlClient", new MySqlMigrationSqlGenerator());
+        }
+
+        protected override void Seed(SchoolContext context)
+        {
+            context.Set<Blog>().AddOrUpdate(new Blog { ID = 1, Name = "张三" }, new Blog { ID = 2, Name = "李四" });
+            base.Seed(context);
         }
     }
 }
