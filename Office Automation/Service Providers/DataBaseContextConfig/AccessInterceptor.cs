@@ -80,7 +80,7 @@ namespace Service_Providers.DataBaseContextConfig
                         }
                     }
                 }
-                // 如果类中有缓存标识
+                // 如果当前查询语句中涉及到缓存
                 if (exps.Count > 0)
                 {
                     DataTable dt = new DataTable();
