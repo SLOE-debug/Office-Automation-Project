@@ -7,7 +7,7 @@ export default function InstallAllControl(app: App<Element>) {
     let ControlName = ComponentPath.match(
       /(?<=.\/).*(?=Control.tsx)/
     )?.toString();
-    if (ControlName && ControlName != "Base") {
+    if (ControlName) {
       app.config.globalProperties.$Controls.push(ControlName);
       let Commpone = require(`@/Controls/${ControlName}Control`);
       app.component(ControlName, Commpone.default);

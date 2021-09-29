@@ -35,7 +35,7 @@ export function Include(ctor: any) {
   })(ctor.__vccOpts.render);
 }
 
-export default class BaseControl extends Vue {
+export default class Control extends Vue {
   render() {
     return (
       <>
