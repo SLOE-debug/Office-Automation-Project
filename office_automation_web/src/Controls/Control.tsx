@@ -84,9 +84,10 @@ export default class Control extends Vue {
     return (
       <div
         style={{ ...this.Style, ...this.RealPosition }}
-        class={"Control" + (this.Actived ? " actived" : "")}
+        class="Control"
         onClick={this.GetFocus}
       >
+        {this.Actived ? <DragHelper style={this.Style} /> : ""}
         <template></template>
       </div>
     );
