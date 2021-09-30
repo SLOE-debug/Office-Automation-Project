@@ -18,6 +18,7 @@
     "@vue/cli-plugin-typescript": "~4.4.0",
     "@vue/cli-service": "~4.5.0",
     "@vue/compiler-sfc": "^3.0.0",
+    "ant-design-vue": "^2.2.8",
     "axios": "^0.21.4",
     "less": "^3.0.4",
     "less-loader": "^5.0.0",

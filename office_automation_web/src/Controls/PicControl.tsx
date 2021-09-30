@@ -1,10 +1,13 @@
 import Control, { Include } from "./Control";
-import { Prop } from "vue-property-decorator";
 
 @Include
 export default class PicControl extends Control {
-  @Prop({}) msg!: string;
   render() {
-    return <div>我是Pic{this.msg}</div>;
+    return (
+      <img
+        src={require("@/assets/image/Views/1165107.jpg")}
+        style="width:100%;height:100%"
+      />
+    );
   }
 }

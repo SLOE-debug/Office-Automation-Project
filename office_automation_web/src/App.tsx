@@ -1,5 +1,5 @@
 import { Vue } from "vue-class-component";
-import "@/assets/css/App.less";
+import '@/assets/css/App.less';
 
 export default class App extends Vue {
   render() {
