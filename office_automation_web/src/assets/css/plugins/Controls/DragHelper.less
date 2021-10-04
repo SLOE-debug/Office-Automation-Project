@@ -2,36 +2,33 @@
 @dotsize: 8px;
 @frame: rgb(6, 123, 239);
 .HelperBlock {
-  position: absolute;
-  z-index: 1;
+  position: fixed;
   margin-left: -@offset;
   margin-top: -@offset;
   border: 1px solid @frame;
   box-sizing: border-box;
+  z-index: 2;
   .dot {
     width: @dotsize;
     height: @dotsize;
     border-radius: 100%;
     border: 1px solid @frame;
     background-color: white;
+    position: absolute;
   }
   .top {
-    position: absolute;
     top: 0;
     margin-top: -@dotsize / 2;
   }
   .left {
-    position: absolute;
     left: 0;
     margin-left: -@dotsize / 2;
   }
   .right {
-    position: absolute;
     right: 0;
     margin-right: -@dotsize / 2;
   }
   .bottom {
-    position: absolute;
     bottom: 0;
     margin-bottom: -@dotsize / 2;
   }

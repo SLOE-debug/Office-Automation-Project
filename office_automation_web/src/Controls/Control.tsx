@@ -1,4 +1,4 @@
-import { Vue, Options } from "vue-class-component";
+import { Options, Vue } from "vue-class-component";
 import "@/assets/css/Controls/Control.less";
 import { Prop } from "vue-property-decorator";
 import DragHelper from "@/plugins/Controls/DragHelper";
@@ -39,55 +39,67 @@ export function Include(ctor: any) {
 }
 
 @Options({
-  emits: ["UnfocusAllControls"],
+  watch: {
+    Actived(n, v) {
+      this.CanDrag = n;
+    },
+  },
 })
 export default class Control extends Vue {
-  @Prop() Position!: {
-    top: string;
-    left: string;
+  @Prop() _position!: {
+    top: number;
+    left: number;
+  };
+  Position = {
+    top: 0,
+    left: 0,
   };
   get RealPosition() {
     let { top, left } = this.Position;
-    let { width, height } = this.Style;
-    top =
-      parseInt(top.replace("px", "")) -
-      parseInt(height.replace("px", "")) / 2 +
-      "px";
-    left =
-      parseInt(left.replace("px", "")) -
-      parseInt(width.replace("px", "")) / 2 +
-      "px";
-    return { top, left };
+    let { width, height } = this.ControlProps;
+    top = top - height / 2;
+    left = left - width / 2;
+    return { top: top + "px", left: left + "px" };
   }
-  Style = {
-    width: "100px",
-    height: "50px",
+  ControlProps = {
+    width: 100,
+    height: 50,
   };
   Actived = false;
   MinWidth = 10;
   MinHeight = 10;
-  classList = ["Control"];
-  CancelFocus() {
-    this.Actived = false;
-  }
-  GetFocus() {
-    if (!this.Actived) {
-      this.$emit("UnfocusAllControls");
-      this.Actived = true;
-    }
-  }
   Event = {};
-  mounted() {
-    this.GetFocus();
+  CanDrag = false;
+  created() {
+    this.Actived = true;
+    this.Position = { ...this._position };
+  }
+  resize(startResize: boolean) {
+    this.CanDrag = !startResize;
   }
   render() {
     return (
       <div
-        style={{ ...this.Style, ...this.RealPosition }}
+        style={{
+          width: this.ControlProps.width + "px",
+          height: this.ControlProps.height + "px",
+          ...this.RealPosition,
+        }}
         class="Control"
-        onClick={this.GetFocus}
+        draggable={this.CanDrag}
       >
-        {this.Actived ? <DragHelper style={this.Style} /> : ""}
+        {
+          <DragHelper
+            v-show={this.Actived}
+            {...{
+              onResize: this.resize,
+              style: {
+                width: this.ControlProps.width + "px",
+                height: this.ControlProps.height + "px",
+              },
+            }}
+          />
+        }
         <template></template>
       </div>
     );

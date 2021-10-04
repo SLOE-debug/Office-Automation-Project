@@ -1,11 +1,14 @@
 @Height: 937px;
+.GrayBorder {
+  border: 1px solid #999;
+  box-sizing: border-box;
+}
 .ControlList {
   float: left;
   width: 150px;
-  border: 1px solid #999;
-  box-sizing: border-box;
   padding: 10px 0px;
   height: @Height;
+  .GrayBorder();
   .ControlItem {
     text-align: center;
     color: white;
@@ -25,8 +28,16 @@
   position: relative;
   height: @Height / 2;
   overflow: hidden;
-  background-color: #EFEFEF;
+  background-color: #efefef;
   * {
     text-align: center;
+  }
+}
+.ControlProps {
+  .ControlList();
+  float: right;
+  width: 250px;
+  .ControlPropItem {
+    .ControlItem();
   }
 }

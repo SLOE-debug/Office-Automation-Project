@@ -1,12 +1,23 @@
-import { Vue } from "vue-class-component";
+import { Options, Vue } from "vue-class-component";
 import "@/assets/css/views/Home.less";
-import { Component } from "vue";
+import { Component, ref } from "vue";
+import { Input as aInput } from "ant-design-vue";
 
+type DragType = "place" | "move";
+
+@Options({
+  components: {
+    aInput,
+  },
+})
 export default class Home extends Vue {
   CorrectDragPosition = false;
-  CurrentControlName = "";
+  CurrentDragInfo = {
+    Name: "",
+    Type: "" as DragType,
+  };
   Controls: Array<Component> = [];
-  FormRect: DOMRect = {} as any;
+  FormRect: DOMRect = null as any;
   ControlDragEvents: { [x: string]: any } = {
     dragstart: this.DragControlStart,
     dragend: this.DragControlEnd,
@@ -15,8 +26,18 @@ export default class Home extends Vue {
     dragleave: this.DragControlLeaveForm,
     drop: this.DragControlComplete,
   };
+  CurrentControlInfo: {
+    Control: any;
+  } = {
+    Control: null,
+  };
   DragControlStart(e: DragEvent) {
-    (e.target as HTMLElement).style.opacity = "0.5";
+    let target = e.target as HTMLElement;
+    if (!target.draggable) {
+      e.preventDefault();
+      return false;
+    }
+    target.style.opacity = "0.5";
   }
   DragControlEnd(e: DragEvent) {
     (e.target as HTMLElement).style.opacity = "";
@@ -36,26 +57,41 @@ export default class Home extends Vue {
       this.CorrectDragPosition = false;
     }
   }
+  GetPosition(e: DragEvent) {
+    return {
+      top: e.y - this.FormRect.y,
+      left: e.x - this.FormRect.x,
+    };
+  }
   DragControlComplete(e: DragEvent) {
     e.preventDefault();
-    if (this.CorrectDragPosition && this.CurrentControlName) {
-      let control = this.$.appContext.components[this.CurrentControlName];
-      let Attr = {
-        Position: {
-          top: e.y - this.FormRect.y + "px",
-          left: e.x - this.FormRect.x + "px",
-        },
+    let { Name, Type } = this.CurrentDragInfo;
+    if (this.CorrectDragPosition) {
+      if (Type == "place") {
+        let control = this.$.appContext.components[Name];
+        let Attr = {
+          _position: this.GetPosition(e),
+        };
+        this.unSelectAllControls();
+        this.Controls.push(<control {...Attr} />);
+        this.$nextTick(() => {
+          this.SelectControl("C" + (this.Controls.length - 1));
+        });
+      }
+      if (this.CurrentDragInfo.Type == "move") {
+        this.$refs[this.CurrentDragInfo.Name].Position = this.GetPosition(e);
+      }
+      this.CurrentDragInfo = {
+        Name: "",
+        Type: "" as any,
       };
-      this.Controls.push(
-        <control {...Attr} onUnfocusAllControls={this.UnfocusAllControls} />
-      );
-      this.CurrentControlName = "";
+      this.CorrectDragPosition = false;
     }
   }
-  UnfocusAllControls() {
+  unSelectAllControls() {
     for (const key in this.$refs) {
       if (key[0] == "C") {
-        (this.$refs[key] as any).CancelFocus();
+        this.$refs[key].Actived = false;
       }
     }
   }
@@ -76,8 +112,30 @@ export default class Home extends Vue {
       );
     }
   }
+  SelectControl(refName: string) {
+    this.unSelectAllControls();
+    this.$refs[refName].Actived = true;
+    this.CurrentControlInfo.Control = this.$refs[refName];
+  }
 
   render() {
+    let PropItems: Array<JSX.Element> = [];
+    if (this.CurrentControlInfo.Control) {
+      PropItems = Object.keys(this.CurrentControlInfo.Control.ControlProps)
+        .sort((a, b) => a.charCodeAt(0) - b.charCodeAt(0))
+        .map((p) => (
+          <div class="ControlPropItem">
+            {p}
+            <aInput
+              type="number"
+              v-model={[
+                this.CurrentControlInfo.Control.ControlProps[p],
+                "value",
+              ]}
+            />
+          </div>
+        ));
+    }
     return (
       <>
         <div class="ControlList">
@@ -86,7 +144,8 @@ export default class Home extends Vue {
               class="ControlItem"
               draggable="true"
               onDragstart={() => {
-                this.CurrentControlName = m;
+                this.CurrentDragInfo.Type = "place";
+                this.CurrentDragInfo.Name = m;
               }}
             >
               {m}
@@ -95,9 +154,19 @@ export default class Home extends Vue {
         </div>
         <div id="Form">
           {this.Controls.map((control, i) => (
-            <control ref={"C" + i} />
+            <control
+              ref={"C" + i}
+              onClick={() => {
+                this.SelectControl("C" + i);
+              }}
+              onDragstart={(e: DragEvent) => {
+                this.CurrentDragInfo.Type = "move";
+                this.CurrentDragInfo.Name = "C" + i;
+              }}
+            />
           ))}
         </div>
+        <div class="ControlProps">{PropItems}</div>
       </>
     );
   }
