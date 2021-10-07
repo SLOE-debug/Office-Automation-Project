@@ -4,8 +4,8 @@ import { Button } from "ant-design-vue";
 @Include
 export default class ButtonControl extends Control {
   ControlProps = {
-    width: 100,
-    height: 40,
+    width: '100px',
+    height: '40px',
   };
   render() {
     return (

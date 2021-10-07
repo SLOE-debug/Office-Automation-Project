@@ -4,9 +4,9 @@ import { SyncOutlined } from "@ant-design/icons-vue";
 @Include
 export default class IconControl extends Control {
   ControlProps = {
-    width: 32,
-    height: 32,
-    option: 0,
+    width: "32px",
+    height: "32px",
+    opacity: "0.5",
   };
   render() {
     return (

@@ -50,40 +50,33 @@ export default class Control extends Vue {
     top: number;
     left: number;
   };
-  Position = {
-    top: 0,
-    left: 0,
-  };
-  get RealPosition() {
-    let { top, left } = this.Position;
+  GetRealPosition() {
+    let { top, left } = this._position;
     let { width, height } = this.ControlProps;
-    top = top - height / 2;
-    left = left - width / 2;
+    top = top - parseInt(height.replace("px", "")) / 2;
+    left = left - parseInt(width.replace("px", "")) / 2;
     return { top: top + "px", left: left + "px" };
   }
-  ControlProps = {
-    width: 100,
-    height: 50,
+  ControlProps: { [x: string]: any } = {
+    width: "100px",
+    height: "50px",
   };
   Actived = false;
-  MinWidth = 10;
-  MinHeight = 10;
+  Astrict = {
+    MinHeight: 10,
+    MinWidth: 10,
+  };
   Event = {};
   CanDrag = false;
   created() {
     this.Actived = true;
-    this.Position = { ...this._position };
-  }
-  resize(startResize: boolean) {
-    this.CanDrag = !startResize;
   }
   render() {
     return (
       <div
         style={{
-          width: this.ControlProps.width + "px",
-          height: this.ControlProps.height + "px",
-          ...this.RealPosition,
+          ...this.ControlProps,
+          ...this.GetRealPosition(),
         }}
         class="Control"
         draggable={this.CanDrag}
@@ -92,10 +85,9 @@ export default class Control extends Vue {
           <DragHelper
             v-show={this.Actived}
             {...{
-              onResize: this.resize,
               style: {
-                width: this.ControlProps.width + "px",
-                height: this.ControlProps.height + "px",
+                width: this.ControlProps.width,
+                height: this.ControlProps.height,
               },
             }}
           />

@@ -1,17 +1,11 @@
-import { Options, Vue } from "vue-class-component";
+import { Vue } from "vue-class-component";
 import "@/assets/css/plugins/Controls/DragHelper.less";
 
-@Options({
-  emits: ["resize"],
-})
 export default class Control extends Vue {
   InitResize(e: MouseEvent) {
     let target = e.target as HTMLElement;
-    if (target.classList[0] == "dot") {
-      this.$emit("resize", true);
-    } else {
-      this.$emit("resize", false);
-    }
+    let resize = target.classList[0] == "dot";
+    (this.$parent as any).CanDrag = !resize;
   }
   render() {
     return (

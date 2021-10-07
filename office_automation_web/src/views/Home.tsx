@@ -1,6 +1,5 @@
 import { Options, Vue } from "vue-class-component";
 import "@/assets/css/views/Home.less";
-import { Component, ref } from "vue";
 import { Input as aInput } from "ant-design-vue";
 
 type DragType = "place" | "move";
@@ -16,7 +15,7 @@ export default class Home extends Vue {
     Name: "",
     Type: "" as DragType,
   };
-  Controls: Array<Component> = [];
+  Controls: Array<any> = [];
   FormRect: DOMRect = null as any;
   ControlDragEvents: { [x: string]: any } = {
     dragstart: this.DragControlStart,
@@ -26,10 +25,9 @@ export default class Home extends Vue {
     dragleave: this.DragControlLeaveForm,
     drop: this.DragControlComplete,
   };
-  CurrentControlInfo: {
-    Control: any;
-  } = {
-    Control: null,
+  CurrentControlInfo = {
+    refName: "",
+    Control: null as any,
   };
   DragControlStart(e: DragEvent) {
     let target = e.target as HTMLElement;
@@ -41,6 +39,7 @@ export default class Home extends Vue {
   }
   DragControlEnd(e: DragEvent) {
     (e.target as HTMLElement).style.opacity = "";
+    this.$forceUpdate();
   }
   DragControlOver(e: DragEvent) {
     e.preventDefault();
@@ -67,25 +66,19 @@ export default class Home extends Vue {
     e.preventDefault();
     let { Name, Type } = this.CurrentDragInfo;
     if (this.CorrectDragPosition) {
-      if (Type == "place") {
-        let control = this.$.appContext.components[Name];
-        let Attr = {
-          _position: this.GetPosition(e),
-        };
-        this.unSelectAllControls();
-        this.Controls.push(<control {...Attr} />);
-        this.$nextTick(() => {
-          this.SelectControl("C" + (this.Controls.length - 1));
-        });
+      switch (Type) {
+        case "place":
+          this.PlaceControl(Name, e);
+          break;
+        case "move":
+          this.Controls[
+            parseInt(Name.replace("C", ""))
+          ].props._position = this.GetPosition(e);
+          break;
+        default:
+          break;
       }
-      if (this.CurrentDragInfo.Type == "move") {
-        this.$refs[this.CurrentDragInfo.Name].Position = this.GetPosition(e);
-      }
-      this.CurrentDragInfo = {
-        Name: "",
-        Type: "" as any,
-      };
-      this.CorrectDragPosition = false;
+      this.ClearDragInfo();
     }
   }
   unSelectAllControls() {
@@ -115,26 +108,77 @@ export default class Home extends Vue {
   SelectControl(refName: string) {
     this.unSelectAllControls();
     this.$refs[refName].Actived = true;
-    this.CurrentControlInfo.Control = this.$refs[refName];
+    this.CurrentControlInfo = {
+      Control: this.$refs[refName],
+      refName,
+    };
+  }
+  PlaceControl(Name: string, e: DragEvent) {
+    let control = this.$.appContext.components[Name];
+    let Attr = {
+      _position: this.GetPosition(e),
+    };
+    this.unSelectAllControls();
+    this.Controls.push(<control {...Attr} />);
+    this.$nextTick(() => {
+      this.SelectControl("C" + (this.Controls.length - 1));
+    });
+  }
+  ClearDragInfo() {
+    this.CurrentDragInfo = {
+      Name: "",
+      Type: "" as any,
+    };
+    this.CorrectDragPosition = false;
+  }
+  GetCurrentControlPositionProp() {
+    return [
+      <div class="ControlPropItem">
+        top
+        <aInput
+          v-model={[
+            this.Controls[
+              parseInt(this.CurrentControlInfo.refName.replace("C", ""))
+            ].props._position.top,
+            "value",
+          ]}
+          onChange={this.$forceUpdate}
+        ></aInput>
+      </div>,
+      <div class="ControlPropItem">
+        left
+        <aInput
+          v-model={[
+            this.Controls[
+              parseInt(this.CurrentControlInfo.refName.replace("C", ""))
+            ].props._position.left,
+            "value",
+          ]}
+          onChange={this.$forceUpdate}
+        ></aInput>
+      </div>,
+    ];
   }
 
   render() {
     let PropItems: Array<JSX.Element> = [];
     if (this.CurrentControlInfo.Control) {
-      PropItems = Object.keys(this.CurrentControlInfo.Control.ControlProps)
-        .sort((a, b) => a.charCodeAt(0) - b.charCodeAt(0))
-        .map((p) => (
-          <div class="ControlPropItem">
-            {p}
-            <aInput
-              type="number"
-              v-model={[
-                this.CurrentControlInfo.Control.ControlProps[p],
-                "value",
-              ]}
-            />
-          </div>
-        ));
+      let PosProp = this.GetCurrentControlPositionProp();
+      PropItems = PosProp.concat(
+        Object.keys(this.CurrentControlInfo.Control.ControlProps)
+          .sort((a, b) => a.charCodeAt(0) - b.charCodeAt(0))
+          .map((p) => (
+            <div class="ControlPropItem">
+              {p}
+              <aInput
+                v-model={[
+                  this.CurrentControlInfo.Control.ControlProps[p],
+                  "value",
+                ]}
+              />
+            </div>
+          ))
+      );
     }
     return (
       <>
