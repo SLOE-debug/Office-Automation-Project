@@ -17,18 +17,29 @@ export default class Home extends Vue {
   };
   Controls: Array<any> = [];
   FormRect: DOMRect = null as any;
-  ControlDragEvents: { [x: string]: any } = {
+  FormDesignerEvents: { [x: string]: any } = {
     dragstart: this.DragControlStart,
     dragend: this.DragControlEnd,
     dragover: this.DragControlOver,
     dragenter: this.DragControlIntoForm,
     dragleave: this.DragControlLeaveForm,
     drop: this.DragControlComplete,
+    keyup: this.KeysMonitor,
   };
   CurrentControlInfo = {
     refName: "",
     Control: null as any,
   };
+  DeleteControl() {
+    console.log(this.CurrentControlInfo.refName.replace());
+
+    console.log(this.Controls);
+  }
+  KeysMonitor(e: KeyboardEvent) {
+    if (this.CurrentControlInfo.Control) {
+      (this as any)[`${e.code}Control`]();
+    }
+  }
   DragControlStart(e: DragEvent) {
     let target = e.target as HTMLElement;
     if (!target.draggable) {
@@ -98,10 +109,10 @@ export default class Home extends Vue {
     this.RegisteredDragEvents(true);
   }
   RegisteredDragEvents(destroy: boolean = false) {
-    for (const EventType in this.ControlDragEvents) {
+    for (const EventType in this.FormDesignerEvents) {
       document[destroy ? "removeEventListener" : "addEventListener"](
         EventType,
-        this.ControlDragEvents[EventType].bind(this)
+        this.FormDesignerEvents[EventType].bind(this)
       );
     }
   }
