@@ -1,4 +1,4 @@
-import Control, { Include } from "./Control";
+import Control, { Include } from "@/DesignerBasicsProvider/Control";
 
 @Include
 export default class PicControl extends Control {

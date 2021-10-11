@@ -1,5 +1,5 @@
 import { Options, Vue } from "vue-class-component";
-import "@/assets/css/views/Home.less";
+// import "@/assets/css/views/FormDesigner.less";
 import { Input as aInput } from "ant-design-vue";
 
 type DragType = "place" | "move";
@@ -9,7 +9,7 @@ type DragType = "place" | "move";
     aInput,
   },
 })
-export default class Home extends Vue {
+export default class FormDesigner extends Vue {
   CorrectDragPosition = false;
   CurrentDragInfo = {
     Name: "",
@@ -31,7 +31,7 @@ export default class Home extends Vue {
     Control: null as any,
   };
   DeleteControl() {
-    console.log(this.CurrentControlInfo.refName.replace());
+    // console.log(this.CurrentControlInfo.refName.replace());
 
     console.log(this.Controls);
   }
@@ -194,7 +194,7 @@ export default class Home extends Vue {
     return (
       <>
         <div class="ControlList">
-          {this.$Controls.map((m) => (
+          {this.$ControlList.map((m) => (
             <div
               class="ControlItem"
               draggable="true"

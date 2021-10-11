@@ -1,11 +1,14 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
-import Home from "../views/Home";
+import FormDesigner from "../views/FormDesigner";
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: "/",
     name: "Home",
-    component: Home,
+    component: FormDesigner,
+    meta: {
+      title: "表单设计器",
+    },
   },
   {
     path: "/About",
@@ -17,6 +20,15 @@ const routes: Array<RouteRecordRaw> = [
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes,
+});
+
+router.beforeEach((to, from, next) => {
+  if (to.meta.title) {
+    document.title = to.meta.title as string;
+  } else {
+    document.title = "OA办公自动化";
+  }
+  next();
 });
 
 export default router;

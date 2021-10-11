@@ -1,0 +1,79 @@
+.Border {
+  border: 1px solid #c5c5c5;
+  box-sizing: border-box;
+}
+@hoverBc: rgba(121, 121, 121, 0.2);
+@propHoverBc: rgb(6, 123, 239);
+#DesignerWindow {
+  color: white;
+  user-select: none;
+  & > * {
+    float: left;
+  }
+  .ControlList {
+    .Border();
+    width: 8%;
+    padding: 5px 0px;
+    height: 100%;
+    .ClItem {
+      width: 100%;
+      text-align: center;
+      cursor: pointer;
+      padding: 2px 0px;
+      user-select: none;
+      &:hover {
+        background-color: @hoverBc;
+      }
+    }
+  }
+  #FormContainerArea {
+    height: 100%;
+    width: 80%;
+    overflow: auto;
+  }
+  .ControlProps {
+    .Border();
+    width: 12%;
+    height: 92%;
+    float: right;
+    .PropItem {
+      width: 100%;
+      padding: 0px 5px;
+      margin: 5px 0px;
+      overflow: hidden;
+      cursor: pointer;
+      &:hover {
+        background-color: @propHoverBc;
+      }
+      & > * {
+        float: left;
+      }
+      .lable {
+        width: 30%;
+        text-align: center;
+      }
+      .content {
+        width: 70%;
+        & > * {
+          width: 100%;
+        }
+      }
+    }
+    .ActivatePropItem {
+      background-color: @propHoverBc;
+    }
+  }
+  #propDes {
+    float: right;
+    .Border();
+    width: 12%;
+    height: 8%;
+    bottom: 0px;
+    padding: 10px;
+    color: white;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

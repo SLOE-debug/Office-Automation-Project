@@ -1,7 +1,8 @@
-import { Options, Vue } from "vue-class-component";
-import "@/assets/css/Controls/Control.less";
+import { GetDefaleProp } from "@/Util/ControlDefaultProp";
+import { Vue } from "vue-class-component";
 import { Prop } from "vue-property-decorator";
-import DragHelper from "@/plugins/Controls/DragHelper";
+import "@/assets/css/DesignerBasicsProvider/Control.less";
+import DragHelper from "./DragHelper";
 
 /**
  * 递归寻找 Template 组件，如果找到了那么就使用子类Render生成的Jsx.Element替换掉Template
@@ -38,60 +39,34 @@ export function Include(ctor: any) {
   })(ctor.__vccOpts.render);
 }
 
-@Options({
-  watch: {
-    Actived(n, v) {
-      this.CanDrag = n;
-    },
-  },
-})
 export default class Control extends Vue {
-  @Prop() _position!: {
-    top: number;
-    left: number;
-  };
-  GetRealPosition() {
-    let { top, left } = this._position;
-    let { width, height } = this.ControlProps;
-    top = top - parseInt(height.replace("px", "")) / 2;
-    left = left - parseInt(width.replace("px", "")) / 2;
-    return { top: top + "px", left: left + "px" };
+  @Prop() attr: any;
+  get Style() {
+    return {
+      width: this.props.width.v + "px",
+      height: this.props.height.v + "px",
+      top: this.attr.top.v - this.props.height.v / 2 + "px",
+      left: this.attr.left.v - this.props.width.v / 2 + "px",
+    };
   }
-  ControlProps: { [x: string]: any } = {
-    width: "100px",
-    height: "50px",
+  selected = false;
+
+  props = {
+    ...GetDefaleProp(),
   };
-  Actived = false;
-  Astrict = {
-    MinHeight: 10,
-    MinWidth: 10,
-  };
-  Event = {};
-  CanDrag = false;
-  created() {
-    this.Actived = true;
-  }
   render() {
     return (
-      <div
-        style={{
-          ...this.ControlProps,
-          ...this.GetRealPosition(),
-        }}
-        class="Control"
-        draggable={this.CanDrag}
-      >
-        {
-          <DragHelper
-            v-show={this.Actived}
-            {...{
-              style: {
-                width: this.ControlProps.width,
-                height: this.ControlProps.height,
-              },
-            }}
-          />
-        }
+      <div style={this.Style} id="Control">
+        <DragHelper
+          v-show={this.selected}
+          {...{
+            style: {
+              width: this.props.width.v + "px",
+              height: this.props.height.v + "px",
+            },
+            props: this.props,
+          }}
+        ></DragHelper>
         <template></template>
       </div>
     );
