@@ -4,6 +4,7 @@ declare module "@vue/runtime-core" {
   export interface ComponentCustomProperties {
     $Api: Api;
     $ControlList: Array<string>;
-    $refs:any
+    $refs: any;
+    $parent: any;
   }
 }

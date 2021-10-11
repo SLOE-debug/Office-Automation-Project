@@ -3,12 +3,11 @@ import FormContainer from "@/DesignerBasicsProvider/FormContainer";
 import "@/assets/css/views/FormDesigner.less";
 import { InputNumber } from "ant-design-vue";
 import { Input as aInput } from "ant-design-vue";
-
-enum DragType {
-  place,
-  move,
-  none,
-}
+import {
+  ControlItemType,
+  dragActionType,
+  DragType,
+} from "@/Util/ControlCommonType";
 
 @Options({
   components: {
@@ -31,39 +30,63 @@ export default class FormDesigner extends Vue {
   selectedPropDes = "";
   propSelectedState: Array<boolean> = [];
   height = window.innerHeight;
-  dragAction = {
-    type: DragType.none,
+  dragAction: dragActionType = {
+    type: DragType.None,
     controlType: "",
+    serialNumber: -1,
   };
-  Controls: Array<any> = [];
+  Controls: Array<ControlItemType> = [];
 
-  DragComplete(e: DragEvent) {
-    e.preventDefault();
+  PlaceControl(e: DragEvent) {
     let target = e.target as HTMLElement;
-    if (
-      target.id == "FormContainer" ||
-      target.parentElement?.id == "FormContainer"
-    ) {
-      let originalPosition = target.getBoundingClientRect();
-      let left = parseFloat((e.x - originalPosition.x).toFixed(2));
-      let top = parseFloat((e.y - originalPosition.y).toFixed(2));
+    let isDragHelper = target.parentElement?.id == "FormContainer";
+    if (isDragHelper) target = target.parentElement!;
+    if (target.id == "FormContainer" || isDragHelper) {
+      let { left, top } = this.GetNewPosition(target, e);
+      let controlType = this.dragAction.controlType;
       this.Controls.push({
-        control: this.$.appContext.components[this.dragAction.controlType],
         attr: {
           top: {
             lable: "上",
-            v: top,
+            v: top - 10,
             des: "该控件距窗体顶部距离",
+            styleProp: true,
           },
           left: {
             lable: "左",
-            v: left,
+            v: left - 10,
             des: "该控件的距窗体左侧的距离",
+            styleProp: true,
           },
         },
-        controlType: this.dragAction.controlType,
+        controlType,
+      });
+      this.$nextTick(() => {
+        let controlName = controlType + (this.Controls.length - 1);
+        this.selectedControl = this.$refs["FormContainer"].$refs[controlName];
       });
     }
+  }
+
+  GetNewPosition(target: HTMLElement, e: DragEvent) {
+    let originalPosition = target.getBoundingClientRect();
+    return {
+      left: parseFloat((e.x - originalPosition.x).toFixed(2)),
+      top: parseFloat((e.y - originalPosition.y).toFixed(2)),
+    };
+  }
+
+  DragComplete(e: DragEvent) {
+    e.preventDefault();
+    (this as any)[this.dragAction.type.toString() + "Control"](e);
+    this.ClearDragAction();
+  }
+  ClearDragAction() {
+    this.dragAction = {
+      type: DragType.None,
+      controlType: "",
+      serialNumber: -1,
+    };
   }
   documentEvents: { [x: string]: any } = {
     drop: this.DragComplete,
@@ -106,7 +129,7 @@ export default class FormDesigner extends Vue {
         let minKey = "min" + k.charAt(0).toUpperCase() + k.slice(1);
         let PropItemClass = "PropItem";
         if (this.propSelectedState[i]) PropItemClass += " ActivatePropItem";
-        let minNumber = 5;
+        let minNumber = 0;
         if (this.selectedControl.props[minKey])
           minNumber = this.selectedControl.props[minKey].v;
         return (
@@ -122,6 +145,11 @@ export default class FormDesigner extends Vue {
                 <InputNumber
                   size="small"
                   min={minNumber}
+                  step={0.1}
+                  precision={2}
+                  onChange={(v) => {
+                    if (!v) this.selectedControl.props[k].v = minNumber;
+                  }}
                   v-model={[this.selectedControl.props[k].v, "value"]}
                 />
               ) : (
@@ -149,7 +177,7 @@ export default class FormDesigner extends Vue {
               draggable="true"
               onDragstart={() => {
                 this.dragAction = {
-                  type: DragType.place,
+                  type: DragType.Place,
                   controlType: c,
                 };
               }}
@@ -162,6 +190,7 @@ export default class FormDesigner extends Vue {
           <FormContainer
             {...{
               Controls: this.Controls,
+              ref: "FormContainer",
               onSelectControl: (control: any) => {
                 this.selectedControl = control;
               },

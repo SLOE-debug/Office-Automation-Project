@@ -1,8 +1,9 @@
-import { GetDefaleProp } from "@/Util/ControlDefaultProp";
+import { GetDefaleProp, GetSuffix } from "@/Util/ControlCommonLib";
 import { Vue } from "vue-class-component";
-import { Prop } from "vue-property-decorator";
+import { Prop, Watch } from "vue-property-decorator";
 import "@/assets/css/DesignerBasicsProvider/Control.less";
 import DragHelper from "./DragHelper";
+import { DragHelperMoveType, PropItemType } from "@/Util/ControlCommonType";
 
 /**
  * 递归寻找 Template 组件，如果找到了那么就使用子类Render生成的Jsx.Element替换掉Template
@@ -40,16 +41,24 @@ export function Include(ctor: any) {
 }
 
 export default class Control extends Vue {
-  @Prop() attr: any;
+  @Prop() attr!: { [x: string]: PropItemType };
   get Style() {
-    return {
-      width: this.props.width.v + "px",
-      height: this.props.height.v + "px",
-      top: this.attr.top.v - this.props.height.v / 2 + "px",
-      left: this.attr.left.v - this.props.width.v / 2 + "px",
-    };
+    let styleObj = {} as any;
+    if (!this.props["top"]) {
+      this.props = { ...this.attr, ...this.props };
+    }
+    for (const k in this.props) {
+      if (this.props[k].styleProp) styleObj[k] = this.props[k].v + GetSuffix(k);
+    }
+    return styleObj;
   }
-  selected = false;
+  selected = null;
+  @Watch("selected")
+  selectedWatch(n: boolean, o: boolean) {
+    if (n && typeof o == "boolean") {
+      this.$refs["DragHelper"].moveType = DragHelperMoveType.Move;
+    }
+  }
 
   props = {
     ...GetDefaleProp(),
@@ -64,6 +73,7 @@ export default class Control extends Vue {
               width: this.props.width.v + "px",
               height: this.props.height.v + "px",
             },
+            ref: "DragHelper",
             props: this.props,
           }}
         ></DragHelper>
