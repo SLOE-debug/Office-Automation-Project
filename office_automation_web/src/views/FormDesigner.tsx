@@ -2,17 +2,26 @@ import { Options, Vue } from "vue-class-component";
 import FormContainer from "@/DesignerBasicsProvider/FormContainer";
 import "@/assets/css/views/FormDesigner.less";
 import { InputNumber } from "ant-design-vue";
-import { Input as aInput } from "ant-design-vue";
+import {
+  Input as aInput,
+  Select as aSelect,
+  SelectOption,
+} from "ant-design-vue";
 import {
   ControlItemType,
   dragActionType,
   DragType,
 } from "@/Util/ControlCommonType";
+import { DocumentEventCenter } from "@/Util/ControlCommonLib";
+import { message } from "ant-design-vue";
+import { Watch } from "vue-property-decorator";
 
 @Options({
   components: {
     InputNumber,
     aInput,
+    aSelect,
+    SelectOption,
   },
   watch: {
     selectedControl(n, o) {
@@ -28,7 +37,6 @@ import {
 export default class FormDesigner extends Vue {
   selectedControl = null as any;
   selectedPropDes = "";
-  propSelectedState: Array<boolean> = [];
   height = window.innerHeight;
   dragAction: dragActionType = {
     type: DragType.None,
@@ -44,8 +52,22 @@ export default class FormDesigner extends Vue {
     if (target.id == "FormContainer" || isDragHelper) {
       let { left, top } = this.GetNewPosition(target, e);
       let controlType = this.dragAction.controlType;
+      let cName = controlType + this.Controls.length;
       this.Controls.push({
         attr: {
+          name: {
+            lable: "名称",
+            v: cName,
+            des: "该控件的唯一名称",
+            onChange: (v: string) => {
+              if (this.Controls.filter((c) => c.attr.name.v == v).length == 2) {
+                message.error({
+                  content: "请勿和其他控件名称重名，该名称应该是唯一的！",
+                  duration: 5,
+                });
+              }
+            },
+          },
           top: {
             lable: "上",
             v: top - 10,
@@ -62,8 +84,7 @@ export default class FormDesigner extends Vue {
         controlType,
       });
       this.$nextTick(() => {
-        let controlName = controlType + (this.Controls.length - 1);
-        this.selectedControl = this.$refs["FormContainer"].$refs[controlName];
+        this.selectedControl = this.$refs["FormContainer"].$refs[cName];
       });
     }
   }
@@ -79,6 +100,7 @@ export default class FormDesigner extends Vue {
   DragComplete(e: DragEvent) {
     e.preventDefault();
     (this as any)[this.dragAction.type.toString() + "Control"](e);
+    this.HiddenMenu();
     this.ClearDragAction();
   }
   ClearDragAction() {
@@ -88,80 +110,114 @@ export default class FormDesigner extends Vue {
       serialNumber: -1,
     };
   }
+
+  HiddenMenu() {
+    this.$store.commit("SetContextMenus", []);
+  }
+
   documentEvents: { [x: string]: any } = {
     drop: this.DragComplete,
     dragover: (e: DragEvent) => {
       e.preventDefault();
     },
+    click: this.HiddenMenu,
   };
+  oldProp = {} as any;
   SelectPropItem(k: string, i: number) {
     this.selectedPropDes = this.selectedControl.props[k].des;
-    for (let i = 0; i < this.propSelectedState.length; i++) {
-      this.propSelectedState[i] = false;
-    }
-    this.propSelectedState[i] = true;
+    if (this.oldProp) this.oldProp.selected = false;
+    this.selectedControl.props[k].selected = true;
+    this.oldProp = this.selectedControl.props[k];
   }
 
   WindowResize() {
     this.height = window.innerHeight;
   }
-  MountEvent(Unmount: boolean = false) {
-    for (const envenType in this.documentEvents) {
-      document[Unmount ? "removeEventListener" : "addEventListener"](
-        envenType,
-        this.documentEvents[envenType].bind(this)
-      );
-    }
-  }
   created() {
     window.addEventListener("resize", this.WindowResize);
-    this.MountEvent();
+    DocumentEventCenter.call(this, this.documentEvents);
   }
   unmounted() {
     window.removeEventListener("resize", this.WindowResize);
-    this.MountEvent(true);
+    DocumentEventCenter.call(this, this.documentEvents, true);
   }
+
+  GetPropsFormControls() {
+    let propsFormControls: Array<JSX.Element> = [];
+    propsFormControls = Object.keys(this.selectedControl.props).map((k, i) => {
+      let minNumber = 0;
+      let minKey = "min" + k.charAt(0).toUpperCase() + k.slice(1);
+      if (this.selectedControl.props[minKey])
+        minNumber = this.selectedControl.props[minKey].v;
+
+      let propDataType = typeof this.selectedControl.props[k].v as any;
+      let propFormControl = <></>;
+      switch (propDataType) {
+        case "number":
+          propFormControl = (
+            <InputNumber
+              size="small"
+              min={minNumber}
+              step={0.1}
+              precision={2}
+              onChange={(v) => {
+                if (!v) this.selectedControl.props[k].v = minNumber;
+              }}
+              v-model={[this.selectedControl.props[k].v, "value"]}
+            />
+          );
+          break;
+        case "string":
+          propFormControl = (
+            <aInput
+              size="small"
+              v-model={[this.selectedControl.props[k].v, "value"]}
+              onChange={(e: InputEvent) => {
+                this.selectedControl.props[k].onChange &&
+                  this.selectedControl.props[k].onChange(
+                    (e.target as HTMLInputElement).value
+                  );
+              }}
+            ></aInput>
+          );
+          break;
+        case "object":
+          propFormControl = (
+            <aSelect
+              v-model={[this.selectedControl.props[k].dataValue, "value"]}
+              size="small"
+            >
+              {Object.keys(this.selectedControl.props[k].v).map((pk) => (
+                <SelectOption value={this.selectedControl.props[k].v[pk]}>
+                  {this.selectedControl.props[k].v[pk]}
+                </SelectOption>
+              ))}
+            </aSelect>
+          );
+          break;
+      }
+      return (
+        <div
+          class={
+            "PropItem" +
+            (this.selectedControl.props[k].selected ? " ActivatePropItem" : "")
+          }
+          onMouseenter={() => {
+            this.SelectPropItem(k, i);
+          }}
+        >
+          <div class="lable">{this.selectedControl.props[k].lable}</div>
+          <div class="content">{propFormControl}</div>
+        </div>
+      );
+    });
+    return propsFormControls;
+  }
+
   render() {
     let props: Array<JSX.Element> = [];
     if (this.selectedControl) {
-      props = Object.keys(this.selectedControl.props).map((k, i) => {
-        this.propSelectedState.push(false);
-        let minKey = "min" + k.charAt(0).toUpperCase() + k.slice(1);
-        let PropItemClass = "PropItem";
-        if (this.propSelectedState[i]) PropItemClass += " ActivatePropItem";
-        let minNumber = 0;
-        if (this.selectedControl.props[minKey])
-          minNumber = this.selectedControl.props[minKey].v;
-        return (
-          <div
-            class={PropItemClass}
-            onMouseenter={() => {
-              this.SelectPropItem(k, i);
-            }}
-          >
-            <div class="lable">{this.selectedControl.props[k].lable}</div>
-            <div class="content">
-              {typeof this.selectedControl.props[k].v == "number" ? (
-                <InputNumber
-                  size="small"
-                  min={minNumber}
-                  step={0.1}
-                  precision={2}
-                  onChange={(v) => {
-                    if (!v) this.selectedControl.props[k].v = minNumber;
-                  }}
-                  v-model={[this.selectedControl.props[k].v, "value"]}
-                />
-              ) : (
-                <aInput
-                  size="small"
-                  v-model={[this.selectedControl.props[k].v, "value"]}
-                ></aInput>
-              )}
-            </div>
-          </div>
-        );
-      });
+      props = this.GetPropsFormControls();
     }
 
     return (

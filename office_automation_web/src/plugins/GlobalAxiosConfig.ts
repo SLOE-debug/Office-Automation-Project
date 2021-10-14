@@ -16,7 +16,7 @@ export type ApiConfigItem = {
  * 定义Api请求中心接口，描述该类型接口中必有得属性
  */
 export interface Api {
-  [index: string]: (data: any) => Promise<any>;
+  [index: string]: (data?: any) => Promise<any>;
 }
 
 /**

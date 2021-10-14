@@ -5,9 +5,11 @@ export type dragActionType = {
 };
 export type PropItemType = {
   lable: string;
-  v: number | string;
+  v: number | string | object;
+  dataValue?: string;
   des: string;
   styleProp?: boolean;
+  onChange?: Function;
 };
 
 export type ControlItemType = {
@@ -25,3 +27,13 @@ export enum DragType {
   Place = "Place",
   None = "",
 }
+
+export type ContextMenuItemType = {
+  title: string;
+  onCilck: Function;
+};
+
+export type ContextMenuPosType = {
+  top: number;
+  left: number;
+};

@@ -2,8 +2,10 @@ import { Vue } from "vue-class-component";
 import "@/assets/css/DesignerBasicsProvider/DragHelper.less";
 import { Prop } from "vue-property-decorator";
 import { DragHelperMoveType, PropItemType } from "@/Util/ControlCommonType";
+import { DocumentEventCenter } from "@/Util/ControlCommonLib";
 
 export default class DragHelper extends Vue {
+  @Prop({ default: true }) CanMove!: boolean;
   @Prop({ default: true }) tl!: boolean;
   @Prop({ default: true }) tr!: boolean;
   @Prop({ default: true }) bl!: boolean;
@@ -62,6 +64,7 @@ export default class DragHelper extends Vue {
   }
 
   Move(e: MouseEvent) {
+    if (!this.CanMove) return;
     // let target = this.$el as HTMLElement;
     // let targetParentRect = target.parentElement!.parentElement!.getBoundingClientRect();
     // let targetRect = target.parentElement!.getBoundingClientRect();
@@ -87,6 +90,7 @@ export default class DragHelper extends Vue {
 
   moveType: DragHelperMoveType = DragHelperMoveType.None;
   BeginAdjust(e: MouseEvent) {
+    if (e.button != 0) return;
     let target = e.target as HTMLElement;
     if (target.classList[0] == "dot") this.moveType = DragHelperMoveType.Resize;
     else this.moveType = DragHelperMoveType.Move;
@@ -96,15 +100,18 @@ export default class DragHelper extends Vue {
     this.moveType = DragHelperMoveType.None;
   }
 
+  documentEvents = {
+    mousemove: this.Slide,
+    mouseup: this.CancelResize,
+  };
+
   created() {
-    document.addEventListener("mousemove", this.Slide);
-    document.addEventListener("mouseup", this.CancelResize);
+    DocumentEventCenter.call(this, this.documentEvents);
   }
   unmounted() {
-    document.removeEventListener("mousemove", this.Slide);
-    document.removeEventListener("mouseup", this.CancelResize);
+    DocumentEventCenter.call(this, this.documentEvents, false);
   }
-
+  
   render() {
     return (
       <div
@@ -116,6 +123,7 @@ export default class DragHelper extends Vue {
         <div class="dot top right neResize" v-show={this.tr}></div>
         <div class="dot bottom left neResize" v-show={this.bl}></div>
         <div class="dot bottom right seResize" v-show={this.br}></div>
+        {this.$slots.default ? this.$slots.default() : ""}
       </div>
     );
   }

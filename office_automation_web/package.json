@@ -25,6 +25,7 @@
     "typescript": "~4.1.5",
     "vue-loader-v16": "^16.0.0-beta.5.4",
     "vue-property-decorator": "^9.1.2",
+    "vuex": "^4.0.2",
     "webpack": "^4.44.2"
   }
 }

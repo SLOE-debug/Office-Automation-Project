@@ -3,5 +3,22 @@
   background-color: white;
   overflow: hidden;
   color: black;
-  margin: 8px;
+}
+#ControlContextMenu {
+  position: absolute;
+  color: white;
+  z-index: 99999;
+  background-color: #1e1e1e;
+  overflow: hidden;
+  .ContextMenu {
+    padding: 6px;
+    border-bottom: 0.1px solid white;
+    cursor: pointer;
+    &:last-child {
+      border: none;
+    }
+    &:hover {
+      background-color: rgba(121, 121, 121, 0.3);
+    }
+  }
 }

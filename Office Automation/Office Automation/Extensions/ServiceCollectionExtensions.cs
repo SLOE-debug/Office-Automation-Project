@@ -24,6 +24,56 @@ namespace Office_Automation.Extensions
             return services;
         }
 
+        public static void InjectingService(Type t, IServiceCollection services, ServiceAttribute ServiceAttr, Type InheritedInterface = null)
+        {
+            // 获取当前类型的 Load 方法，通过自定义的 初始化 方式注入服务
+            MethodInfo Load = t.GetMethod("Load", BindingFlags.Static | BindingFlags.Public);
+            // 当前注入方法所需的参数类型列表
+            List<Type> paramsTypes = new List<Type> { services.GetType() };
+            // 创建的委托类型泛型参数数组
+            List<Type> delegateGenericityParams = new List<Type>() { typeof(IServiceCollection) };
+            // 创建的委托类型
+            Type type = typeof(Func<,>);
+            if (InheritedInterface == null)
+            {
+                paramsTypes.Add(typeof(Type));
+                delegateGenericityParams.Add(typeof(Type));
+                type = typeof(Func<,,>);
+            }
+            delegateGenericityParams.Add(typeof(IServiceCollection));
+            type = type.MakeGenericType(delegateGenericityParams.ToArray());
+            // 委托形参对应的实参
+            List<object> @params = new List<object>() { services };
+            if (InheritedInterface == null) @params.Add(t);
+            if (Load != null)
+            {
+                List<Type> loadDelegateGenericityParams = new List<Type>() { typeof(IServiceProvider), t };
+                if (InheritedInterface == null) loadDelegateGenericityParams[1] = typeof(object);
+                Type loadType = typeof(Func<,>).MakeGenericType(loadDelegateGenericityParams.ToArray());
+                // 添加 初始化方法 形参
+                paramsTypes.Add(loadType);
+                // 替换委托类型为 需传入初始化方法的 类型
+                delegateGenericityParams.Insert(2, loadType);
+                type = typeof(Func<,,>);
+                if (InheritedInterface == null) type = typeof(Func<,,,>);
+                type = type.MakeGenericType(delegateGenericityParams.ToArray());
+                // 通过当前的 Load 方法创建一个委托给对应的实参
+                @params.Add(Delegate.CreateDelegate(loadType, Load));
+            }
+
+            // 通过指定的方法名及形参列表获取对应的方法
+            MethodInfo addMethod = null;
+
+            if (InheritedInterface == null)
+                addMethod = typeof(ServiceCollectionServiceExtensions).GetMethod($"Add{ServiceAttr.Lifecycle}", paramsTypes.ToArray());
+            else
+                addMethod = typeof(ServiceCollectionServiceExtensions).GetMethods().Where(m => m.Name == $"Add{ServiceAttr.Lifecycle}" && m.GetGenericArguments().Length == 2 && m.GetParameters().Length == paramsTypes.Count).ElementAt(0).MakeGenericMethod(InheritedInterface, t);
+
+            var add = Delegate.CreateDelegate(type, addMethod);
+            add.DynamicInvoke(@params.ToArray());
+        }
+
+
         public static IServiceCollection AddAutoInject(this IServiceCollection services)
         {
             Stopwatch sw = Stopwatch.StartNew();
@@ -49,29 +99,7 @@ namespace Office_Automation.Extensions
                         }
                         else
                         {
-                            // 获取当前类型的 Load 方法，通过自定义的 初始化 方式注入服务
-                            MethodInfo Load = t.GetMethod("Load", BindingFlags.Static | BindingFlags.Public);
-                            // 当前注入方法所需的参数类型列表
-                            List<Type> paramsTypes = new List<Type> { services.GetType(), typeof(Type) };
-                            // 创建的委托类型
-                            Type type = typeof(Func<IServiceCollection, Type, IServiceCollection>);
-                            // 委托形参对应的实参
-                            List<object> @params = new List<object>() { services, t };
-                            // 如果 Load 方法不为空，那么将使用自定义的初始化过程注入，反之将使用自带的DI容器注入
-                            if (Load != null)
-                            {
-                                // 添加 初始化方法 形参
-                                paramsTypes.Add(typeof(Func<IServiceProvider, object>));
-                                // 替换委托类型为 需传入初始化方法的 类型
-                                type = typeof(Func<IServiceCollection, Type, Func<IServiceProvider, object>, IServiceCollection>);
-                                // 通过当前的 Load 方法创建一个委托给对应的实参
-                                @params.Add(Delegate.CreateDelegate(typeof(Func<IServiceProvider, object>), Load));
-                            }
-                            // 通过指定的方法名及形参列表获取对应的方法
-                            var addMethod = typeof(ServiceCollectionServiceExtensions).GetMethod($"Add{ServiceAttr.Lifecycle}", paramsTypes.ToArray());
-                            // 通过委托类型创建委托
-                            var add = Delegate.CreateDelegate(type, addMethod);
-                            add.DynamicInvoke(@params.ToArray());
+                            InjectingService(t, services, ServiceAttr);
 
                             Console.WriteLine($"注入没有接口的类：{t.FullName}，服务生命周期：{ServiceAttr.Lifecycle}");
                         }
@@ -86,32 +114,7 @@ namespace Office_Automation.Extensions
                             // 如果 服务键值对 中包含当前接口，那么将会按照当前接口及当前类型做依赖注入
                             if (ServiceInterface.ContainsKey(Inherited))
                             {
-                                // 获取当前类型的 Load 方法，通过自定义的 初始化 方式注入服务
-                                MethodInfo Load = t.GetMethod("Load", BindingFlags.Static | BindingFlags.Public);
-                                // 当前注入方法所需的参数类型列表
-                                List<Type> paramsTypes = new List<Type> { services.GetType() };
-                                // 创建的委托类型
-                                Type type = typeof(Func<IServiceCollection, IServiceCollection>);
-                                // 委托形参对应的实参
-                                List<object> @params = new List<object>() { services };
-                                // 如果 Load 方法不为空，那么将使用自定义的初始化过程注入，反之将使用自带的DI容器注入
-                                if (Load != null)
-                                {
-                                    Type loadType = typeof(Func<,>).MakeGenericType(typeof(IServiceProvider), t);
-                                    // 添加 初始化方法 形参
-                                    paramsTypes.Add(loadType);
-                                    // 替换委托类型为 需传入初始化方法的 类型
-                                    type = typeof(Func<,,>).MakeGenericType(typeof(IServiceCollection), loadType, typeof(IServiceCollection));
-                                    // 通过当前的 Load 方法创建一个委托给对应的实参
-                                    @params.Add(Delegate.CreateDelegate(loadType, Load));
-                                }
-                                // 通过指定的方法名及形参列表获取对应的方法
-                                var addMethod = typeof(ServiceCollectionServiceExtensions).GetMethods().Where(m => m.Name == $"Add{ServiceInterface[Inherited].Lifecycle}" && m.GetGenericArguments().Length == 2 && m.GetParameters().Length == paramsTypes.Count).ElementAt(0)
-                                     // 填入相对应的泛型参数
-                                     .MakeGenericMethod(Inherited, t);
-                                // 通过委托类型创建委托
-                                var add = Delegate.CreateDelegate(type, addMethod);
-                                add.DynamicInvoke(@params.ToArray());
+                                InjectingService(t, services, ServiceInterface[Inherited], Inherited);
 
                                 Console.WriteLine($"{t.FullName}继承自：{Inherited.FullName}，服务生命周期：{ServiceInterface[Inherited].Lifecycle}");
                             }

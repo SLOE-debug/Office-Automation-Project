@@ -31,26 +31,44 @@ export function Include(ctor: any) {
   ctor.__vccOpts.render = (function(render) {
     return function(this: Vue) {
       // 获取父类的JsxDom
-      let baseDom = baseRender.apply(this);
+      let DragHelperDom = baseRender.apply(this);
+      let BaseDom = DragHelperDom.children.default();
       // 替换父类中JsxDom的Template标签
-      RplaceTemplate(baseDom, render.bind(this));
+      RplaceTemplate(BaseDom, render.bind(this));
+
+      DragHelperDom.children.default = () => BaseDom;
       // 返回已经被替换的父类JsxDom
-      return baseDom;
+      return DragHelperDom;
     };
   })(ctor.__vccOpts.render);
 }
 
 export default class Control extends Vue {
   @Prop() attr!: { [x: string]: PropItemType };
+  @Prop() controlType!: string;
   get Style() {
     let styleObj = {} as any;
-    if (!this.props["top"]) {
-      this.props = { ...this.attr, ...this.props };
-    }
     for (const k in this.props) {
-      if (this.props[k].styleProp) styleObj[k] = this.props[k].v + GetSuffix(k);
+      if (this.props[k].styleProp) {
+        if (typeof this.props[k].v != "object")
+          styleObj[k] = this.props[k].v + GetSuffix(k);
+        else styleObj[k] = this.props[k].dataValue + GetSuffix(k);
+      }
     }
     return styleObj;
+  }
+
+  get Type() {
+    return this.controlType;
+  }
+
+  get DragHelperStyle() {
+    return {
+      width: this.props.width.v + "px",
+      height: this.props.height.v + "px",
+      top: this.attr.top.v + "px",
+      left: this.attr.left.v + "px",
+    };
   }
   selected = null;
   @Watch("selected")
@@ -60,25 +78,32 @@ export default class Control extends Vue {
     }
   }
 
-  props = {
-    ...GetDefaleProp(),
-  };
+  created() {
+    this.props = { ...this.attr, ...GetDefaleProp(), ...this.props };
+  }
+
+  props: { [x: string]: PropItemType } = {};
   render() {
     return (
-      <div style={this.Style} id="Control">
-        <DragHelper
-          v-show={this.selected}
-          {...{
-            style: {
-              width: this.props.width.v + "px",
-              height: this.props.height.v + "px",
-            },
-            ref: "DragHelper",
-            props: this.props,
-          }}
-        ></DragHelper>
-        <template></template>
-      </div>
+      <DragHelper
+        {...{
+          style: this.DragHelperStyle,
+          tl: this.selected,
+          tr: this.selected,
+          bl: this.selected,
+          br: this.selected,
+          ref: "DragHelper",
+          props: this.props,
+        }}
+      >
+        {{
+          default: () => (
+            <div style={this.Style} id="Control">
+              <template></template>
+            </div>
+          ),
+        }}
+      </DragHelper>
     );
   }
 }
