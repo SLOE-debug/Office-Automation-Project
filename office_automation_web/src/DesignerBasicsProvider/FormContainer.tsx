@@ -60,6 +60,9 @@ export default class FormContainer extends Vue {
     this.$parent.selectedControl = null;
     return RemoveControl;
   }
+  EscapeControl() {
+    this.$parent.selectedControl = null;
+  }
   ArrowLeftControl() {
     this.$parent.selectedControl.props.left.v--;
   }

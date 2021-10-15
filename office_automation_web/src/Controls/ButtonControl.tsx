@@ -5,51 +5,16 @@ import { Button } from "ant-design-vue";
 
 @Include
 export default class ButtonControl extends Control {
-  props: { [x: string]: PropItemType } = {
-    width: {
-      lable: "宽度",
-      v: 80,
-      des: "控件的宽度",
-      styleProp: true,
-    },
-    height: {
-      lable: "高度",
-      v: 30,
-      des: "控件的高度",
-      styleProp: true,
-    },
-    backgroundColor: {
-      lable: "背景颜色",
-      v: "#1890ff",
-      des: "控件背景颜色",
-      styleProp: true,
-    },
-    borderWidth: {
-      lable: "边框大小",
-      v: 1,
-      des: "控件边框的大小",
-      styleProp: true,
-    },
-    borderStyle: {
-      lable: "边框样式",
-      v: borderStyleModel,
-      dataValue: "solid",
-      des: "控件边框的样式",
-      styleProp: true,
-    },
-    borderColor: {
-      lable: "边框颜色",
-      v: "#1890ff",
-      des: "控件边框颜色",
-      styleProp: true,
-    },
-    color: {
-      lable: "字体颜色",
-      v: "white",
-      des: "控件字体颜色",
-      styleProp: true,
-    },
-  };
+  props: { [x: string]: PropItemType } = {};
+  created() {
+    this.props.width.v = 80;
+    this.props.height.v = 30;
+    this.props.backgroundColor.v = "#1890ff";
+    this.props.borderWidth.v = 1;
+    this.props.borderStyle.dataValue = "solid";
+    this.props.borderColor.v = "#1890ff";
+    this.props.color.v = "white";
+  }
   render() {
     return (
       <Button

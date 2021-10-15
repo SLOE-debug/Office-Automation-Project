@@ -19,11 +19,11 @@ export default class DragHelper extends Vue {
   DetectionCursor(e: MouseEvent) {
     let target = e.target as HTMLElement;
     if (target.classList[0] == "dot") {
-      if (
-        !this.adjustBasis[target.classList[1]] ||
-        !this.adjustBasis[target.classList[2]]
-      )
-        this.CancelResize();
+      // if (
+      //   !this.adjustBasis[target.classList[1]] ||
+      //   !this.adjustBasis[target.classList[2]]
+      // )
+      //   this.CancelResize();
       this.adjustBasis = {
         top: false,
         bottom: false,
@@ -111,18 +111,29 @@ export default class DragHelper extends Vue {
   unmounted() {
     DocumentEventCenter.call(this, this.documentEvents, false);
   }
-  
+
   render() {
+    let dots: Array<JSX.Element> = [];
+    let className = "HelperBlock";
+
+    if (this.moveType == DragHelperMoveType.None) {
+      dots = [
+        <div class="dot top left seResize" v-show={this.tl}></div>,
+        <div class="dot top right neResize" v-show={this.tr}></div>,
+        <div class="dot bottom left neResize" v-show={this.bl}></div>,
+        <div class="dot bottom right seResize" v-show={this.br}></div>,
+      ];
+    } else {
+      if (this.CanMove) className += " HelperBlockMoving";
+    }
+    
     return (
       <div
-        class="HelperBlock"
+        class={className}
         onMousemove={this.DetectionCursor}
         onMousedown={this.BeginAdjust}
       >
-        <div class="dot top left seResize" v-show={this.tl}></div>
-        <div class="dot top right neResize" v-show={this.tr}></div>
-        <div class="dot bottom left neResize" v-show={this.bl}></div>
-        <div class="dot bottom right seResize" v-show={this.br}></div>
+        {...dots}
         {this.$slots.default ? this.$slots.default() : ""}
       </div>
     );

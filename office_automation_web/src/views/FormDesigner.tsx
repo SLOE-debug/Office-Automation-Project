@@ -1,11 +1,12 @@
 import { Options, Vue } from "vue-class-component";
 import FormContainer from "@/DesignerBasicsProvider/FormContainer";
 import "@/assets/css/views/FormDesigner.less";
-import { InputNumber } from "ant-design-vue";
 import {
   Input as aInput,
   Select as aSelect,
+  InputNumber,
   SelectOption,
+  Textarea,
 } from "ant-design-vue";
 import {
   ControlItemType,
@@ -14,7 +15,6 @@ import {
 } from "@/Util/ControlCommonType";
 import { DocumentEventCenter } from "@/Util/ControlCommonLib";
 import { message } from "ant-design-vue";
-import { Watch } from "vue-property-decorator";
 
 @Options({
   components: {
@@ -22,6 +22,7 @@ import { Watch } from "vue-property-decorator";
     aInput,
     aSelect,
     SelectOption,
+    Textarea,
   },
   watch: {
     selectedControl(n, o) {
@@ -168,18 +169,33 @@ export default class FormDesigner extends Vue {
           );
           break;
         case "string":
-          propFormControl = (
-            <aInput
-              size="small"
-              v-model={[this.selectedControl.props[k].v, "value"]}
-              onChange={(e: InputEvent) => {
-                this.selectedControl.props[k].onChange &&
-                  this.selectedControl.props[k].onChange(
-                    (e.target as HTMLInputElement).value
-                  );
-              }}
-            ></aInput>
-          );
+          if (k == "text") {
+            propFormControl = (
+              <Textarea
+                size="small"
+                v-model={[this.selectedControl.props[k].v, "value"]}
+                onChange={(e: InputEvent) => {
+                  this.selectedControl.props[k].onChange &&
+                    this.selectedControl.props[k].onChange(
+                      (e.target as HTMLInputElement).value
+                    );
+                }}
+              ></Textarea>
+            );
+          } else {
+            propFormControl = (
+              <aInput
+                size="small"
+                v-model={[this.selectedControl.props[k].v, "value"]}
+                onChange={(e: InputEvent) => {
+                  this.selectedControl.props[k].onChange &&
+                    this.selectedControl.props[k].onChange(
+                      (e.target as HTMLInputElement).value
+                    );
+                }}
+              ></aInput>
+            );
+          }
           break;
         case "object":
           propFormControl = (
@@ -221,11 +237,7 @@ export default class FormDesigner extends Vue {
     }
 
     return (
-      <div
-        style={`height:${this.height}px`}
-        id="DesignerWindow"
-        onDblclick={() => (this.selectedControl = null)}
-      >
+      <div style={`height:${this.height}px`} id="DesignerWindow">
         <div class="ControlList">
           {this.$ControlList.map((c) => (
             <div
