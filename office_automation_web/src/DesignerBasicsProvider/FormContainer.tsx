@@ -7,11 +7,8 @@ import {
   DocumentEventCenter,
   GetSuffix,
 } from "@/Util/ControlCommonLib";
-import {
-  ContextMenuItemType,
-  ControlItemType,
-  PropItemType,
-} from "@/Util/ControlCommonType";
+import { ControlItemType, PropItemType } from "@/Util/ControlCommonType";
+import ContextMenu from "./ContextMenu";
 
 @Options({
   emits: ["SelectControl"],
@@ -76,8 +73,11 @@ export default class FormContainer extends Vue {
     this.$parent.selectedControl.props.top.v++;
   }
   copyControlType: string | null = null;
-  cControl() {
-    if (this.controlKeyActivate && this.$parent.selectedControl) {
+  cControl(compulsive: boolean = false) {
+    if (
+      (this.controlKeyActivate && this.$parent.selectedControl) ||
+      compulsive
+    ) {
       this.copyControlType = this.$parent.selectedControl.Type;
     } else {
       this.copyControlType = null;
@@ -173,10 +173,11 @@ export default class FormContainer extends Vue {
     this.$store.commit("SetContextMenus", [
       {
         title: "复制",
-        onCilck: this.cControl,
+        onCilck: () => this.cControl(true),
       },
       {
         title: "粘贴",
+        show: !!this.copyControlType,
         onCilck: this.vControl,
       },
       {
@@ -206,19 +207,6 @@ export default class FormContainer extends Vue {
     e.stopPropagation();
   }
 
-  // console.log(
-  //   JSON.stringify(
-  //     this.Controls.map((c) => {
-  //       return {
-  //         t: c.controlType,
-  //         a: Object.keys(c.attr).map((k) => {
-  //           return { [k]: c.attr[k].v };
-  //         }),
-  //       };
-  //     })
-  //   )
-  // );
-
   render() {
     return (
       <DragHelper
@@ -235,23 +223,7 @@ export default class FormContainer extends Vue {
         {{
           default: () => (
             <>
-              <div
-                id="ControlContextMenu"
-                style={{
-                  top: this.$store.getters.ContextMenuPos.top + "px",
-                  left: this.$store.getters.ContextMenuPos.left + "px",
-                }}
-              >
-                {this.$store.getters.ContextMenus.map(
-                  (m: ContextMenuItemType) => {
-                    return (
-                      <div class="ContextMenu" onClick={m.onCilck as any}>
-                        {m.title}
-                      </div>
-                    );
-                  }
-                )}
-              </div>
+              <ContextMenu />
               <div
                 style={this.Style}
                 id="FormContainer"

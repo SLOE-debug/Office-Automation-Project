@@ -31,6 +31,7 @@ export enum DragType {
 export type ContextMenuItemType = {
   title: string;
   onCilck: Function;
+  show?: boolean;
 };
 
 export type ContextMenuPosType = {
