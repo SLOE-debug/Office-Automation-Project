@@ -211,11 +211,14 @@ export default class DragHelper extends Vue {
   @Watch("hiddenPickerArea")
   HiddenPickerAreaWatch(n: boolean, o: boolean) {
     if (n) {
-      this.$nextTick(() => {
-        this.hueRect = this.$refs["HuePicker"].getBoundingClientRect();
-        this.PickerAreaRect = this.$refs["PickerArea"].getBoundingClientRect();
-        this.UpdateHsvByHex(this.hex);
-      });
+      if (this.PickerAreaRect.width == 0)
+        this.$nextTick(() => {
+          this.hueRect = this.$refs["HuePicker"].getBoundingClientRect();
+          this.PickerAreaRect = this.$refs[
+            "PickerArea"
+          ].getBoundingClientRect();
+          this.UpdateHsvByHex(this.hex);
+        });
     }
   }
 

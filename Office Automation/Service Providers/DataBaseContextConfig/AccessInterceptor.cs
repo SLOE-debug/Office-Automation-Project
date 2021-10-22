@@ -19,6 +19,14 @@ namespace Service_Providers.DataBaseContextConfig
     /// </summary>
     public class AccessInterceptor : DbCommandInterceptor
     {
+        // 暂存Model层中所有的的类和表名关系的信息
+        public static Dictionary<string, Type> tableNameRelationType = (from t in typeof(AccessInterceptor).Assembly.GetTypes() where t.Namespace == "Service_Providers.Models" select t).ToDictionary(t =>
+        {
+            // 如果实体被 TableAttribute 特性标识了，那么将会以 TableAttribute 标识的表名为键，否则将以原实体类名为键
+            string tableName = ((TableAttribute)t.GetCustomAttributes(typeof(TableAttribute), false).FirstOrDefault())?.Name;
+            return tableName == null ? t.Name : tableName;
+        }, t => t);
+        // Redis缓存
         private readonly RedisCache redis;
         public AccessInterceptor(RedisCache _redis)
         {
@@ -56,22 +64,15 @@ namespace Service_Providers.DataBaseContextConfig
             {
                 // 当前符合条件类的过期时间
                 List<int> exps = new List<int>();
-                // 暂存Model层中所有的的类和表名关系的信息
-                Dictionary<string, Type> tableNameRelType = (from t in typeof(AccessInterceptor).Assembly.GetTypes() where t.Namespace == "Service_Providers.Models" select t).ToDictionary(t =>
-                {
-                    // 如果实体被 TableAttribute 特性标识了，那么将会以 TableAttribute 标识的表名为键，否则将以原实体类名为键
-                    string tableName = ((TableAttribute)t.GetCustomAttributes(typeof(TableAttribute), false).FirstOrDefault())?.Name;
-                    return tableName == null ? t.Name : tableName;
-                }, t => t);
 
                 // 通过sql语句来正则匹配查询的表名
                 foreach (var item in Regex.Matches(command.CommandText, "(?<=FROM\\s\\`).*(?=\\`\\sAS)"))
                 {
                     // 判断当前类信息中有没有当前查询的表
-                    if (tableNameRelType.ContainsKey(item.ToString()))
+                    if (tableNameRelationType.ContainsKey(item.ToString()))
                     {
                         // 获取当前类中的缓存标识时间
-                        int? cacheSeconds = ((RedisCachingAttribute)tableNameRelType[item.ToString()].GetCustomAttributes(typeof(RedisCachingAttribute), false).FirstOrDefault())?.Seconds;
+                        int? cacheSeconds = ((RedisCachingAttribute)tableNameRelationType[item.ToString()].GetCustomAttributes(typeof(RedisCachingAttribute), false).FirstOrDefault())?.Seconds;
                         // 如果当前缓存标识中有值
                         if (cacheSeconds.HasValue && cacheSeconds.Value > 0)
                         {

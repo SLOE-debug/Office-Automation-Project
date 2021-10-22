@@ -6,6 +6,7 @@ import {
   CloneInstance,
   DocumentEventCenter,
   GetSuffix,
+  Guid,
 } from "@/Util/ControlCommonLib";
 import { ControlItemType, PropItemType } from "@/Util/ControlCommonType";
 import ContextMenu from "./ContextMenu";
@@ -82,26 +83,39 @@ export default class FormContainer extends Vue {
   ArrowDownControl() {
     this.$parent.selectedControl.props.top.v++;
   }
-  copyControlType: string | null = null;
+  copyControlType: {
+    Type: string;
+    attr: { [x: string]: PropItemType };
+    props: { [x: string]: PropItemType };
+  } | null = null;
   cControl(compulsive: boolean = false) {
     if (
       (this.controlKeyActivate && this.$parent.selectedControl) ||
       compulsive
     ) {
-      this.copyControlType = this.$parent.selectedControl.Type;
+      this.copyControlType = {
+        Type: this.$parent.selectedControl.Type,
+        attr: this.$parent.selectedControl.attr,
+        props: this.$parent.selectedControl.props,
+      };
     } else {
       this.copyControlType = null;
     }
   }
   vControl() {
     if (this.copyControlType) {
-      let attr = CloneInstance(this.$parent.selectedControl.attr) as {
-        [x: string]: PropItemType;
-      };
-      attr.name.v = this.copyControlType + this.Controls.length;
+      let attr = CloneInstance(this.copyControlType.attr);
+      let props = CloneInstance(this.copyControlType.props);
+      delete props["name"];
+      attr.name.v = this.copyControlType.Type + this.Controls.length;
       (attr.top.v as number) += 20;
       (attr.left.v as number) += 20;
-      this.Controls.push({ attr, controlType: this.copyControlType });
+      this.Controls.push({
+        Id: Guid(),
+        attr,
+        props,
+        controlType: this.copyControlType.Type,
+      });
     }
   }
 
@@ -250,11 +264,12 @@ export default class FormContainer extends Vue {
                   let control = this.$.appContext.components[c.controlType];
                   return (
                     <control
+                      key={c.Id}
                       onContextmenu={this.ControlContextmenu}
                       attr={c.attr}
+                      transmitProps={c.props}
                       style={"z-index:" + (i + 1)}
                       ref={c.attr.name.v}
-                      key={c.controlType + i}
                       controlType={c.controlType}
                       onClick={(e: MouseEvent) => {
                         e.stopPropagation();

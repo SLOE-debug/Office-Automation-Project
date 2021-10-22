@@ -27,7 +27,7 @@ namespace Service_Providers.DataBaseContextConfig
             // 设置指定的数据库提供程序的服务类
             SetProviderServices("MySql.Data.MySqlClient", new MySqlProviderServices());
             // 添加命令拦截器，为了缓存
-            AddInterceptor(new AccessInterceptor(ProviderCenter.GetService<RedisCache>()));
+            AddInterceptor(new AccessInterceptor(ServiceProviderCenter.GetService<RedisCache>()));
         }
     }
 }

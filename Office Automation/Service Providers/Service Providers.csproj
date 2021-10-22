@@ -9,6 +9,8 @@
   <ItemGroup>
     <Content Remove="C:\Users\c0375.LINDAPATENT1009\.nuget\packages\mysql.data.entityframework\8.0.26\contentFiles\any\netstandard2.1\app.config.transform" />
     <Content Remove="C:\Users\c0375.LINDAPATENT1009\.nuget\packages\mysql.data.entityframework\8.0.26\contentFiles\any\netstandard2.1\web.config.transform" />
+    <Content Remove="C:\Users\SLOE\.nuget\packages\mysql.data.entityframework\8.0.26\contentFiles\any\netstandard2.1\app.config.transform" />
+    <Content Remove="C:\Users\SLOE\.nuget\packages\mysql.data.entityframework\8.0.26\contentFiles\any\netstandard2.1\web.config.transform" />
   </ItemGroup>
 
   <ItemGroup>

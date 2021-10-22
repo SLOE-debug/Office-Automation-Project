@@ -26,6 +26,7 @@ namespace Office_Automation.Extensions
 
         public static void InjectingService(Type t, IServiceCollection services, ServiceAttribute ServiceAttr, Type InheritedInterface = null)
         {
+            bool noInheritance = InheritedInterface == null;
             // 获取当前类型的 Load 方法，通过自定义的 初始化 方式注入服务
             MethodInfo Load = t.GetMethod("Load", BindingFlags.Static | BindingFlags.Public);
             // 当前注入方法所需的参数类型列表
@@ -34,7 +35,7 @@ namespace Office_Automation.Extensions
             List<Type> delegateGenericityParams = new List<Type>() { typeof(IServiceCollection) };
             // 创建的委托类型
             Type type = typeof(Func<,>);
-            if (InheritedInterface == null)
+            if (noInheritance)
             {
                 paramsTypes.Add(typeof(Type));
                 delegateGenericityParams.Add(typeof(Type));
@@ -44,18 +45,18 @@ namespace Office_Automation.Extensions
             type = type.MakeGenericType(delegateGenericityParams.ToArray());
             // 委托形参对应的实参
             List<object> @params = new List<object>() { services };
-            if (InheritedInterface == null) @params.Add(t);
+            if (noInheritance) @params.Add(t);
             if (Load != null)
             {
                 List<Type> loadDelegateGenericityParams = new List<Type>() { typeof(IServiceProvider), t };
-                if (InheritedInterface == null) loadDelegateGenericityParams[1] = typeof(object);
+                if (noInheritance) loadDelegateGenericityParams[1] = typeof(object);
                 Type loadType = typeof(Func<,>).MakeGenericType(loadDelegateGenericityParams.ToArray());
                 // 添加 初始化方法 形参
                 paramsTypes.Add(loadType);
                 // 替换委托类型为 需传入初始化方法的 类型
-                delegateGenericityParams.Insert(2, loadType);
+                delegateGenericityParams.Insert(noInheritance ? 2 : 1, loadType);
                 type = typeof(Func<,,>);
-                if (InheritedInterface == null) type = typeof(Func<,,,>);
+                if (noInheritance) type = typeof(Func<,,,>);
                 type = type.MakeGenericType(delegateGenericityParams.ToArray());
                 // 通过当前的 Load 方法创建一个委托给对应的实参
                 @params.Add(Delegate.CreateDelegate(loadType, Load));
@@ -64,7 +65,7 @@ namespace Office_Automation.Extensions
             // 通过指定的方法名及形参列表获取对应的方法
             MethodInfo addMethod = null;
 
-            if (InheritedInterface == null)
+            if (noInheritance)
                 addMethod = typeof(ServiceCollectionServiceExtensions).GetMethod($"Add{ServiceAttr.Lifecycle}", paramsTypes.ToArray());
             else
                 addMethod = typeof(ServiceCollectionServiceExtensions).GetMethods().Where(m => m.Name == $"Add{ServiceAttr.Lifecycle}" && m.GetGenericArguments().Length == 2 && m.GetParameters().Length == paramsTypes.Count).ElementAt(0).MakeGenericMethod(InheritedInterface, t);

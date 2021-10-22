@@ -46,6 +46,7 @@ export function Include(ctor: any) {
 export default class Control extends Vue {
   @Prop() attr!: { [x: string]: PropItemType };
   @Prop() controlType!: string;
+  @Prop({ default: {} }) transmitProps!: { [x: string]: PropItemType };
   get Style() {
     let styleObj = {} as any;
     for (const k in this.props) {
@@ -53,7 +54,7 @@ export default class Control extends Vue {
         let tempValue;
         if (typeof this.props[k].v != "object") tempValue = this.props[k].v;
         else tempValue = this.props[k].dataValue;
-        if (tempValue) styleObj[k] = tempValue + GetSuffix(k);
+        styleObj[k] = tempValue + GetSuffix(k);
       }
     }
     return styleObj;
@@ -67,8 +68,8 @@ export default class Control extends Vue {
     return {
       width: this.props.width.v + "px",
       height: this.props.height.v + "px",
-      top: this.attr.top.v + "px",
-      left: this.attr.left.v + "px",
+      top: this.props.top.v + "px",
+      left: this.props.left.v + "px",
     };
   }
   selected = null;
@@ -80,7 +81,12 @@ export default class Control extends Vue {
   }
 
   created() {
-    this.props = { ...this.attr, ...GetDefaleProp(), ...this.props };
+    this.props = {
+      ...this.attr,
+      ...GetDefaleProp(),
+      ...this.props,
+      ...this.transmitProps,
+    };
   }
 
   props: { [x: string]: PropItemType } = {};

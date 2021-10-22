@@ -17,7 +17,7 @@ namespace Office_Automation
         public static void Main(string[] args)
         {
             IHost host = CreateHostBuilder(args).Build();
-            ProviderCenter.Host = host;
+            ServiceProviderCenter.Host = host;
             host.Run();
         }
 

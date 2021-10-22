@@ -13,7 +13,7 @@ import {
   dragActionType,
   DragType,
 } from "@/Util/ControlCommonType";
-import { DocumentEventCenter } from "@/Util/ControlCommonLib";
+import { DocumentEventCenter, Guid } from "@/Util/ControlCommonLib";
 import { message } from "ant-design-vue";
 import ColorPicker from "@/DesignerBasicsProvider/ColorPicker";
 
@@ -57,6 +57,7 @@ export default class FormDesigner extends Vue {
       let controlType = this.dragAction.controlType;
       let cName = controlType + this.Controls.length;
       this.Controls.push({
+        Id: Guid(),
         attr: {
           name: {
             lable: "名称",
@@ -134,6 +135,7 @@ export default class FormDesigner extends Vue {
       let v = parseFloat(target.value).toFixed(2);
       target.value = (parseFloat(v) + n).toFixed(2);
       target.dispatchEvent(new Event("input"));
+      e.stopPropagation();
     }
   }
 
@@ -185,7 +187,8 @@ export default class FormDesigner extends Vue {
               step={0.1}
               precision={2}
               onChange={(v) => {
-                if (!v) this.selectedControl.props[k].v = minNumber;
+                if (v == undefined || v == null || v < minNumber)
+                  this.selectedControl.props[k].v = minNumber;
               }}
               v-model={[this.selectedControl.props[k].v, "value"]}
             />
@@ -201,17 +204,16 @@ export default class FormDesigner extends Vue {
                   this.selectedControl.props[k].onChange &&
                     this.selectedControl.props[k].onChange(e);
                 }}
+                key={this.selectedControl.props.name?.v + k}
               ></Textarea>
             );
-          }
-          if (this.selectedControl.props[k].isColor) {
+          } else if (this.selectedControl.props[k].isColor) {
             propFormControl = (
               <ColorPicker
                 {...{
                   value: this.selectedControl.props[k].v,
                   onChange: (e: string) =>
                     (this.selectedControl.props[k].v = e),
-                  key: this.selectedControl.props.name?.v + k,
                 }}
               ></ColorPicker>
             );
@@ -255,7 +257,9 @@ export default class FormDesigner extends Vue {
           }}
         >
           <div class="lable">{this.selectedControl.props[k].lable}</div>
-          <div class="content">{propFormControl}</div>
+          <div class="content" key={this.selectedControl.props.name?.v + k}>
+            {propFormControl}
+          </div>
         </div>
       );
     });

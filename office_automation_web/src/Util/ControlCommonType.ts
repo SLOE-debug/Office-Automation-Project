@@ -14,7 +14,9 @@ export type PropItemType = {
 };
 
 export type ControlItemType = {
+  Id: string;
   attr: { [x: string]: PropItemType };
+  props?: { [x: string]: PropItemType };
   controlType: string;
 };
 
