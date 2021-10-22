@@ -20,13 +20,13 @@ export default class FormContainer extends Vue {
       lable: "宽度",
       v: 800,
       des: "控件的宽度",
-      styleProp: true,
+      isStyle: true,
     },
     height: {
       lable: "高度",
       v: 500,
       des: "控件的高度",
-      styleProp: true,
+      isStyle: true,
     },
     minWidth: {
       lable: "最小宽度",
@@ -38,11 +38,18 @@ export default class FormContainer extends Vue {
       v: 50,
       des: "控件的最小高度",
     },
+    backgroundColor: {
+      lable: "背景颜色",
+      v: "#EDEDED",
+      des: "窗体的背景颜色",
+      isStyle: true,
+      isColor: true,
+    },
   };
   get Style() {
     let styleObj = {} as any;
     for (const k in this.props) {
-      if (this.props[k].styleProp) styleObj[k] = this.props[k].v + GetSuffix(k);
+      if (this.props[k].isStyle) styleObj[k] = this.props[k].v + GetSuffix(k);
     }
     return styleObj;
   }
@@ -175,6 +182,14 @@ export default class FormContainer extends Vue {
     if (!this.$parent.selectedControl) return;
     this.$store.commit("SetContextMenus", [
       {
+        title: "置于顶层",
+        onCilck: this.BringToFront,
+      },
+      {
+        title: "置于底层",
+        onCilck: this.AtTheBottom,
+      },
+      {
         title: "复制",
         onCilck: () => this.cControl(true),
       },
@@ -182,14 +197,6 @@ export default class FormContainer extends Vue {
         title: "粘贴",
         show: !!this.copyControlType,
         onCilck: this.vControl,
-      },
-      {
-        title: "置于顶层",
-        onCilck: this.BringToFront,
-      },
-      {
-        title: "置于底层",
-        onCilck: this.AtTheBottom,
       },
       {
         title: "上移一层",
@@ -218,6 +225,10 @@ export default class FormContainer extends Vue {
           tl: false,
           tr: false,
           bl: false,
+          t: false,
+          l: false,
+          b: this.selected,
+          r: this.selected,
           br: this.selected,
           props: this.props,
           CanMove: false,
@@ -243,7 +254,7 @@ export default class FormContainer extends Vue {
                       attr={c.attr}
                       style={"z-index:" + (i + 1)}
                       ref={c.attr.name.v}
-                      key={c.attr.name.v}
+                      key={c.controlType + i}
                       controlType={c.controlType}
                       onClick={(e: MouseEvent) => {
                         e.stopPropagation();

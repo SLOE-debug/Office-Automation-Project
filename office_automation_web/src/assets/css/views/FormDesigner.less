@@ -42,8 +42,11 @@
       width: 100%;
       padding: 0px 5px;
       margin: 5px 0px;
-      overflow: hidden;
+      // overflow: hidden;
       cursor: pointer;
+      height: 24px;
+      display: flex;
+      align-items: center;
       &:hover {
         background-color: @propHoverBc;
       }
@@ -56,6 +59,7 @@
       }
       .content {
         width: 70%;
+        height: 100%;
         & > * {
           width: 100%;
         }
@@ -77,5 +81,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    text-align: center;
   }
 }

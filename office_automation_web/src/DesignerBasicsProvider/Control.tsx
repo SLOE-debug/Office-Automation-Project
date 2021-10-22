@@ -49,10 +49,11 @@ export default class Control extends Vue {
   get Style() {
     let styleObj = {} as any;
     for (const k in this.props) {
-      if (this.props[k].styleProp) {
-        if (typeof this.props[k].v != "object")
-          styleObj[k] = this.props[k].v + GetSuffix(k);
-        else styleObj[k] = this.props[k].dataValue + GetSuffix(k);
+      if (this.props[k].isStyle) {
+        let tempValue;
+        if (typeof this.props[k].v != "object") tempValue = this.props[k].v;
+        else tempValue = this.props[k].dataValue;
+        if (tempValue) styleObj[k] = tempValue + GetSuffix(k);
       }
     }
     return styleObj;
@@ -92,6 +93,10 @@ export default class Control extends Vue {
           tr: this.selected,
           bl: this.selected,
           br: this.selected,
+          t: this.selected,
+          b: this.selected,
+          l: this.selected,
+          r: this.selected,
           ref: "DragHelper",
           props: this.props,
         }}

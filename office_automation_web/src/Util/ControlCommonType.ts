@@ -8,8 +8,9 @@ export type PropItemType = {
   v: number | string | object;
   dataValue?: string;
   des: string;
-  styleProp?: boolean;
+  isStyle?: boolean;
   onChange?: Function;
+  isColor?: boolean;
 };
 
 export type ControlItemType = {

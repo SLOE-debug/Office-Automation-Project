@@ -1,11 +1,8 @@
 import Control, { Include } from "@/DesignerBasicsProvider/Control";
-import { borderStyleModel, GetDefaleProp } from "@/Util/ControlCommonLib";
-import { PropItemType } from "@/Util/ControlCommonType";
 import { Button } from "ant-design-vue";
 
 @Include
 export default class ButtonControl extends Control {
-  props: { [x: string]: PropItemType } = {};
   created() {
     this.props.width.v = 80;
     this.props.height.v = 30;
@@ -13,7 +10,7 @@ export default class ButtonControl extends Control {
     this.props.borderWidth.v = 1;
     this.props.borderStyle.dataValue = "solid";
     this.props.borderColor.v = "#1890ff";
-    this.props.color.v = "white";
+    this.props.color.v = "#FFFFFF";
   }
   render() {
     return (

@@ -15,6 +15,7 @@ import {
 } from "@/Util/ControlCommonType";
 import { DocumentEventCenter } from "@/Util/ControlCommonLib";
 import { message } from "ant-design-vue";
+import ColorPicker from "@/DesignerBasicsProvider/ColorPicker";
 
 @Options({
   components: {
@@ -23,6 +24,7 @@ import { message } from "ant-design-vue";
     aSelect,
     SelectOption,
     Textarea,
+    ColorPicker,
   },
   watch: {
     selectedControl(n, o) {
@@ -60,8 +62,12 @@ export default class FormDesigner extends Vue {
             lable: "名称",
             v: cName,
             des: "该控件的唯一名称",
-            onChange: (v: string) => {
-              if (this.Controls.filter((c) => c.attr.name.v == v).length == 2) {
+            onChange: (e: InputEvent) => {
+              if (
+                this.Controls.filter(
+                  (c) => c.attr.name.v == (e.target as HTMLInputElement).value
+                ).length == 2
+              ) {
                 message.error({
                   content: "请勿和其他控件名称重名，该名称应该是唯一的！",
                   duration: 5,
@@ -73,13 +79,13 @@ export default class FormDesigner extends Vue {
             lable: "上",
             v: top - 10,
             des: "该控件距窗体顶部距离",
-            styleProp: true,
+            isStyle: true,
           },
           left: {
             lable: "左",
             v: left - 10,
             des: "该控件的距窗体左侧的距离",
-            styleProp: true,
+            isStyle: true,
           },
         },
         controlType,
@@ -116,12 +122,28 @@ export default class FormDesigner extends Vue {
     this.$store.commit("SetContextMenus", []);
   }
 
+  RollingIncrementOrDecrement(e: WheelEvent) {
+    let target = e.target as HTMLInputElement;
+    if (target.classList[0] == "ant-input-number-input") {
+      // let step = target.attributes.getNamedItem("step");
+      let n = 1;
+      // if (step) {
+      //   n = parseFloat(step.value);
+      // }
+      if (e.deltaY > 0) n = -n;
+      let v = parseFloat(target.value).toFixed(2);
+      target.value = (parseFloat(v) + n).toFixed(2);
+      target.dispatchEvent(new Event("input"));
+    }
+  }
+
   documentEvents: { [x: string]: any } = {
     drop: this.DragComplete,
     dragover: (e: DragEvent) => {
       e.preventDefault();
     },
     click: this.HiddenMenu,
+    mousewheel: this.RollingIncrementOrDecrement,
   };
   oldProp = {} as any;
   SelectPropItem(k: string, i: number) {
@@ -146,13 +168,14 @@ export default class FormDesigner extends Vue {
   GetPropsFormControls() {
     let propsFormControls: Array<JSX.Element> = [];
     propsFormControls = Object.keys(this.selectedControl.props).map((k, i) => {
-      let minNumber = 0;
+      let minNumber = k == "left" || k == "top" ? -100000000 : 0;
       let minKey = "min" + k.charAt(0).toUpperCase() + k.slice(1);
       if (this.selectedControl.props[minKey])
         minNumber = this.selectedControl.props[minKey].v;
 
       let propDataType = typeof this.selectedControl.props[k].v as any;
       let propFormControl = <></>;
+
       switch (propDataType) {
         case "number":
           propFormControl = (
@@ -176,11 +199,21 @@ export default class FormDesigner extends Vue {
                 v-model={[this.selectedControl.props[k].v, "value"]}
                 onChange={(e: InputEvent) => {
                   this.selectedControl.props[k].onChange &&
-                    this.selectedControl.props[k].onChange(
-                      (e.target as HTMLInputElement).value
-                    );
+                    this.selectedControl.props[k].onChange(e);
                 }}
               ></Textarea>
+            );
+          }
+          if (this.selectedControl.props[k].isColor) {
+            propFormControl = (
+              <ColorPicker
+                {...{
+                  value: this.selectedControl.props[k].v,
+                  onChange: (e: string) =>
+                    (this.selectedControl.props[k].v = e),
+                  key: this.selectedControl.props.name?.v + k,
+                }}
+              ></ColorPicker>
             );
           } else {
             propFormControl = (
@@ -189,9 +222,7 @@ export default class FormDesigner extends Vue {
                 v-model={[this.selectedControl.props[k].v, "value"]}
                 onChange={(e: InputEvent) => {
                   this.selectedControl.props[k].onChange &&
-                    this.selectedControl.props[k].onChange(
-                      (e.target as HTMLInputElement).value
-                    );
+                    this.selectedControl.props[k].onChange(e);
                 }}
               ></aInput>
             );
@@ -202,10 +233,11 @@ export default class FormDesigner extends Vue {
             <aSelect
               v-model={[this.selectedControl.props[k].dataValue, "value"]}
               size="small"
+              allowClear
             >
               {Object.keys(this.selectedControl.props[k].v).map((pk) => (
                 <SelectOption value={this.selectedControl.props[k].v[pk]}>
-                  {this.selectedControl.props[k].v[pk]}
+                  {pk}
                 </SelectOption>
               ))}
             </aSelect>

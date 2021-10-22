@@ -2,6 +2,9 @@
 @offset: -@dotSize / 2;
 .HelperBlock {
   position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   .dot {
     position: absolute;
     border: 1px solid rgb(6, 123, 239);
@@ -9,6 +12,7 @@
     width: @dotSize;
     height: @dotSize;
     background-color: white;
+    z-index: 1;
   }
   .top {
     top: @offset;
@@ -27,6 +31,12 @@
   }
   .neResize {
     cursor: ne-resize;
+  }
+  .nResize {
+    cursor: n-resize;
+  }
+  .eResize {
+    cursor: e-resize;
   }
 }
 .HelperBlockMoving {

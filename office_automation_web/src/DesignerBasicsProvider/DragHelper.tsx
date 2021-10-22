@@ -10,53 +10,63 @@ export default class DragHelper extends Vue {
   @Prop({ default: true }) tr!: boolean;
   @Prop({ default: true }) bl!: boolean;
   @Prop({ default: true }) br!: boolean;
+  @Prop({ default: true }) t!: boolean;
+  @Prop({ default: true }) b!: boolean;
+  @Prop({ default: true }) l!: boolean;
+  @Prop({ default: true }) r!: boolean;
   @Prop() props!: { [x: string]: PropItemType };
 
   adjustBasis: {
     [x: string]: boolean;
   } = {};
 
+  individualAdjustment = "";
   DetectionCursor(e: MouseEvent) {
     let target = e.target as HTMLElement;
     if (target.classList[0] == "dot") {
-      // if (
-      //   !this.adjustBasis[target.classList[1]] ||
-      //   !this.adjustBasis[target.classList[2]]
-      // )
-      //   this.CancelResize();
       this.adjustBasis = {
         top: false,
         bottom: false,
         left: false,
         right: false,
       };
+      this.individualAdjustment = "";
       this.adjustBasis[target.classList[1]] = true;
-      this.adjustBasis[target.classList[2]] = true;
+      if (target.classList[2][1] != "R")
+        this.adjustBasis[target.classList[2]] = true;
+      else this.individualAdjustment = target.classList[1];
     }
   }
 
   Resize(e: MouseEvent) {
+    let forbidWidth =
+      this.individualAdjustment != "top" &&
+      this.individualAdjustment != "bottom";
+    let forbidHeight =
+      this.individualAdjustment != "left" &&
+      this.individualAdjustment != "right";
     let { minWidth, minHeight } = this.props;
     let x = e.movementX;
     let y = e.movementY;
     if (this.adjustBasis.top) {
       y = -y;
-      if ((this.props.height.v as number) + y > minHeight.v)
+      if ((this.props.height.v as number) + y >= minHeight.v) {
         this.props.top.v = parseFloat(
           ((this.props.top.v as number) + -y).toFixed(2)
         );
+      }
     }
     if (this.adjustBasis.left) {
       x = -x;
-      if ((this.props.width.v as number) + x > minWidth.v)
+      if ((this.props.width.v as number) + x >= minWidth.v)
         this.props.left.v = parseFloat(
           ((this.props.left.v as number) + -x).toFixed(2)
         );
     }
     let w = (this.props.width.v as number) + x;
     let h = (this.props.height.v as number) + y;
-    if (w >= minWidth.v) this.props.width.v = w;
-    if (h >= minHeight.v) this.props.height.v = h;
+    if (w >= minWidth.v && forbidWidth) this.props.width.v = w;
+    if (h >= minHeight.v && forbidHeight) this.props.height.v = h;
   }
 
   Slide(e: MouseEvent) {
@@ -65,27 +75,12 @@ export default class DragHelper extends Vue {
 
   Move(e: MouseEvent) {
     if (!this.CanMove) return;
-    // let target = this.$el as HTMLElement;
-    // let targetParentRect = target.parentElement!.parentElement!.getBoundingClientRect();
-    // let targetRect = target.parentElement!.getBoundingClientRect();
     this.props.top.v = parseFloat(
       ((this.props.top.v as number) + e.movementY).toFixed(2)
     );
     this.props.left.v = parseFloat(
       ((this.props.left.v as number) + e.movementX).toFixed(2)
     );
-    // let leftNum = Math.abs(
-    //   Math.ceil(this.props.left.v + targetRect.width) - targetParentRect.width
-    // );
-    // if (leftNum < 5) {
-    //   this.props.left.v = targetParentRect.width - targetRect.width;
-    // }
-    // let topNum = Math.abs(
-    //   Math.ceil(this.props.top.v + targetRect.height) - targetParentRect.height
-    // );
-    // if (topNum < 5) {
-    //   this.props.top.v = targetParentRect.height - targetRect.height;
-    // }
   }
 
   moveType: DragHelperMoveType = DragHelperMoveType.None;
@@ -122,11 +117,15 @@ export default class DragHelper extends Vue {
         <div class="dot top right neResize" v-show={this.tr}></div>,
         <div class="dot bottom left neResize" v-show={this.bl}></div>,
         <div class="dot bottom right seResize" v-show={this.br}></div>,
+        <div class="dot top nResize" v-show={this.t}></div>,
+        <div class="dot bottom nResize" v-show={this.b}></div>,
+        <div class="dot left eResize" v-show={this.l}></div>,
+        <div class="dot right eResize" v-show={this.r}></div>,
       ];
     } else {
       if (this.CanMove) className += " HelperBlockMoving";
     }
-    
+
     return (
       <div
         class={className}
