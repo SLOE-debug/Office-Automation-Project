@@ -11,6 +11,8 @@ export type PropItemType = {
   isStyle?: boolean;
   onChange?: Function;
   isColor?: boolean;
+  isTextarea?: boolean;
+  selected?: boolean;
 };
 
 export type ControlItemType = {

@@ -10,6 +10,7 @@ import {
 } from "@/Util/ControlCommonLib";
 import { ControlItemType, PropItemType } from "@/Util/ControlCommonType";
 import ContextMenu from "./ContextMenu";
+import Control from "./Control";
 
 @Options({
   emits: ["SelectControl"],
@@ -41,7 +42,7 @@ export default class FormContainer extends Vue {
     },
     backgroundColor: {
       lable: "背景颜色",
-      v: "#EDEDED",
+      v: "#e3e3e3",
       des: "窗体的背景颜色",
       isStyle: true,
       isColor: true,
@@ -55,33 +56,39 @@ export default class FormContainer extends Vue {
     return styleObj;
   }
 
-  GetCurrentControlIndex() {
-    return this.Controls.findIndex(
-      (c) => c.attr.name.v == this.$parent.selectedControl.props.name.v
-    );
+  GetCurrentControlIndex(cName: string) {
+    return this.Controls.findIndex((c) => c.attr.name.v == cName);
   }
 
   selected = false;
   DeleteControl() {
-    let ControlIndex = this.GetCurrentControlIndex();
-    let RemoveControl = this.Controls.splice(ControlIndex, 1);
-    this.$parent.selectedControl = null;
-    return RemoveControl;
-  }
-  EscapeControl() {
-    this.$parent.selectedControl = null;
+    let RemoveControls: ControlItemType[] = [];
+    this.$parent.selectedControls.forEach((c: Control) => {
+      let ControlIndex = this.GetCurrentControlIndex(c.props.name.v.toString());
+      RemoveControls.push(...this.Controls.splice(ControlIndex, 1));
+    });
+    this.$parent.selectedControls = [];
+    return RemoveControls;
   }
   ArrowLeftControl() {
-    this.$parent.selectedControl.props.left.v--;
+    this.$parent.selectedControls.forEach((c: Control) => {
+      (c.props.left.v as number)--;
+    });
   }
   ArrowRightControl() {
-    this.$parent.selectedControl.props.left.v++;
+    this.$parent.selectedControls.forEach((c: Control) => {
+      (c.props.left.v as number)++;
+    });
   }
   ArrowUpControl() {
-    this.$parent.selectedControl.props.top.v--;
+    this.$parent.selectedControls.forEach((c: Control) => {
+      (c.props.top.v as number)--;
+    });
   }
   ArrowDownControl() {
-    this.$parent.selectedControl.props.top.v++;
+    this.$parent.selectedControls.forEach((c: Control) => {
+      (c.props.top.v as number)++;
+    });
   }
   copyControlType: {
     Type: string;
@@ -107,11 +114,13 @@ export default class FormContainer extends Vue {
       let attr = CloneInstance(this.copyControlType.attr);
       let props = CloneInstance(this.copyControlType.props);
       delete props["name"];
+      delete props["top"];
+      delete props["left"];
       attr.name.v = this.copyControlType.Type + this.Controls.length;
       (attr.top.v as number) += 20;
       (attr.left.v as number) += 20;
       this.Controls.push({
-        Id: Guid(),
+        Id: Guid().replace("-", ""),
         attr,
         props,
         controlType: this.copyControlType.Type,
@@ -137,15 +146,17 @@ export default class FormContainer extends Vue {
   }
 
   BringToFront() {
-    let RemoveControl = this.DeleteControl()[0];
-    this.Controls.push(RemoveControl);
+    let RemoveControl = this.DeleteControl();
+    this.Controls.push(...RemoveControl);
   }
   AtTheBottom() {
-    let RemoveControl = this.DeleteControl()[0];
-    this.Controls.unshift(RemoveControl);
+    let RemoveControl = this.DeleteControl();
+    this.Controls.unshift(...RemoveControl);
   }
   MoveUpALayerOf(reversed: boolean = false) {
-    let ControlIndex = this.GetCurrentControlIndex();
+    let ControlIndex = this.GetCurrentControlIndex(
+      this.$parent.selectedControls[0].props.name.v.toString()
+    );
     if (ControlIndex == 0 && !reversed) return;
     if (ControlIndex == this.Controls.length - 1 && reversed) return;
     let start = ControlIndex - 1;
@@ -167,11 +178,11 @@ export default class FormContainer extends Vue {
     );
   }
 
+  ContainerRect = new DOMRect();
   GlobalMenuControl(e: MouseEvent) {
-    let ContainerRect = this.$refs.FormContainerDom.getBoundingClientRect() as DOMRect;
     this.$store.commit("SetContextMenuPos", {
-      top: e.y - ContainerRect.y,
-      left: e.x - ContainerRect.x,
+      top: e.y - this.ContainerRect.y,
+      left: e.x - this.ContainerRect.x,
     });
     if (!(e as any).path.find((d: HTMLElement) => d.id == "Control")) {
       this.$parent.HiddenMenu();
@@ -183,9 +194,14 @@ export default class FormContainer extends Vue {
     keydown: this.MonitorKey,
     keyup: this.MonitorKey,
     contextmenu: this.GlobalMenuControl,
+    mousemove: this.ResizeSelectFloatLayer,
+    mouseup: this.ClearSelectFloatLayer,
   };
   created() {
     DocumentEventCenter.call(this, this.documentEvents);
+    this.$nextTick(() => {
+      this.ContainerRect = this.$refs.FormContainerDom.getBoundingClientRect();
+    });
   }
 
   unmounted() {
@@ -193,7 +209,7 @@ export default class FormContainer extends Vue {
   }
 
   ControlContextmenu(e: MouseEvent) {
-    if (!this.$parent.selectedControl) return;
+    if (!this.$parent.selectedControls.length) return;
     this.$store.commit("SetContextMenus", [
       {
         title: "置于顶层",
@@ -214,21 +230,94 @@ export default class FormContainer extends Vue {
       },
       {
         title: "上移一层",
+        show: this.$parent.selectedControls.length == 1,
         onCilck: () => this.MoveUpALayerOf(true),
       },
       {
         title: "下移一层",
+        show: this.$parent.selectedControls.length == 1,
         onCilck: () => this.MoveUpALayerOf(),
       },
     ]);
   }
 
-  SelectControl(cName: string | null, e: MouseEvent) {
-    let Control = this.selected ? (null as any) : this;
-    if (cName) Control = this.$refs[cName!];
-    this.$emit("SelectControl", Control);
+  SelectControls(cName: Array<string> | null, e: MouseEvent) {
+    let Controls = [this];
+    if (cName) Controls = cName.map((c) => this.$refs[c]);
+    this.$emit("SelectControl", Controls);
     this.$parent.HiddenMenu();
     e.stopPropagation();
+  }
+
+  get SelectFloatLayerStyle() {
+    return {
+      width: this.selectFloatLayerAttr.width + "px",
+      height: this.selectFloatLayerAttr.height + "px",
+      top: this.selectFloatLayerAttr.top + "px",
+      left: this.selectFloatLayerAttr.left + "px",
+    };
+  }
+  selectFloatLayerAttr = {
+    width: 0,
+    height: 0,
+    top: 0,
+    left: 0,
+  };
+  selectFloatLayerEnable = false;
+  originalCoordinates = {
+    x: 0,
+    y: 0,
+  };
+
+  PlaceSelectFloatLayerTime = 0;
+  PlaceSelectFloatLayer(e: MouseEvent) {
+    this.PlaceSelectFloatLayerTime = e.timeStamp;
+    this.selectFloatLayerEnable = true;
+    let x = Math.round(e.x - this.ContainerRect.x);
+    let y = Math.round(e.y - this.ContainerRect.y);
+    this.originalCoordinates = {
+      x,
+      y,
+    };
+    this.selectFloatLayerAttr.top = y;
+    this.selectFloatLayerAttr.left = x;
+    this.selectFloatLayerAttr.width = 0;
+    this.selectFloatLayerAttr.height = 0;
+  }
+  ClearSelectFloatLayer(e: MouseEvent) {
+    let SelectControls = this.Controls.filter((c) => {
+      let cInstance = this.$refs[c.attr.name.v.toString()];
+      if (
+        c.attr.top.v > this.selectFloatLayerAttr.top &&
+        c.attr.left.v > this.selectFloatLayerAttr.left &&
+        c.attr.top.v + cInstance.props.height.v <
+          this.selectFloatLayerAttr.top + this.selectFloatLayerAttr.height &&
+        c.attr.left.v + cInstance.props.width.v <
+          this.selectFloatLayerAttr.left + this.selectFloatLayerAttr.width
+      ) {
+        return true;
+      }
+    }).map((c) => c.attr.name.v.toString());
+    if (SelectControls.length) this.SelectControls(SelectControls, e);
+    this.selectFloatLayerEnable = false;
+    this.selectFloatLayerAttr.width = 0;
+    this.selectFloatLayerAttr.height = 0;
+  }
+  ResizeSelectFloatLayer(e: MouseEvent) {
+    if (this.selectFloatLayerEnable) {
+      let currentX = Math.round(e.x - this.ContainerRect.x);
+      let currentY = Math.round(e.y - this.ContainerRect.y);
+      let w = Math.abs(currentX - this.originalCoordinates.x);
+      let h = Math.abs(currentY - this.originalCoordinates.y);
+      if (currentY < this.originalCoordinates.y)
+        this.selectFloatLayerAttr.top = currentY;
+      else this.selectFloatLayerAttr.top = this.originalCoordinates.y;
+      if (currentX < this.originalCoordinates.x)
+        this.selectFloatLayerAttr.left = currentX;
+      else this.selectFloatLayerAttr.left = this.originalCoordinates.x;
+      this.selectFloatLayerAttr.width = w;
+      this.selectFloatLayerAttr.height = h;
+    }
   }
 
   render() {
@@ -257,14 +346,22 @@ export default class FormContainer extends Vue {
                 id="FormContainer"
                 ref="FormContainerDom"
                 onClick={(e: MouseEvent) => {
-                  this.SelectControl(null, e);
+                  if (e.timeStamp - this.PlaceSelectFloatLayerTime < 150)
+                    this.SelectControls(null, e);
                 }}
+                onMousedown={this.PlaceSelectFloatLayer}
               >
+                <div
+                  class="SelectFloatLayer"
+                  style={this.SelectFloatLayerStyle}
+                  v-show={this.selectFloatLayerAttr.width != 0}
+                ></div>
                 {this.Controls.map((c, i) => {
                   let control = this.$.appContext.components[c.controlType];
                   return (
                     <control
                       key={c.Id}
+                      Id={c.Id}
                       onContextmenu={this.ControlContextmenu}
                       attr={c.attr}
                       transmitProps={c.props}
@@ -275,8 +372,14 @@ export default class FormContainer extends Vue {
                         e.stopPropagation();
                       }}
                       onMousedown={(e: MouseEvent) => {
-                        if (e.button == 0)
-                          this.SelectControl(c.attr.name.v.toString(), e);
+                        if (
+                          e.button == 0 &&
+                          this.$parent.selectedControls.length <= 1
+                        ) {
+                          this.SelectControls([c.attr.name.v.toString()], e);
+                        } else {
+                          e.stopPropagation();
+                        }
                       }}
                     ></control>
                   );

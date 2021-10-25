@@ -46,7 +46,8 @@ export function Include(ctor: any) {
 export default class Control extends Vue {
   @Prop() attr!: { [x: string]: PropItemType };
   @Prop() controlType!: string;
-  @Prop({ default: {} }) transmitProps!: { [x: string]: PropItemType };
+  @Prop({ default: null }) transmitProps!: { [x: string]: PropItemType };
+  @Prop() Id!: string;
   get Style() {
     let styleObj = {} as any;
     for (const k in this.props) {
@@ -68,15 +69,19 @@ export default class Control extends Vue {
     return {
       width: this.props.width.v + "px",
       height: this.props.height.v + "px",
-      top: this.props.top.v + "px",
-      left: this.props.left.v + "px",
+      top: this.attr.top.v + "px",
+      left: this.attr.left.v + "px",
     };
   }
   selected = null;
   @Watch("selected")
   selectedWatch(n: boolean, o: boolean) {
-    if (n && typeof o == "boolean") {
-      this.$refs["DragHelper"].moveType = DragHelperMoveType.Move;
+    if (typeof o == "boolean") {
+      if (n) {
+        this.$refs["DragHelper"].moveType = DragHelperMoveType.Move;
+      } else {
+        this.$refs["DragHelper"].moveType = DragHelperMoveType.None;
+      }
     }
   }
 

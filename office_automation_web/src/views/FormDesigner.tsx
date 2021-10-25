@@ -16,6 +16,7 @@ import {
 import { DocumentEventCenter, Guid } from "@/Util/ControlCommonLib";
 import { message } from "ant-design-vue";
 import ColorPicker from "@/DesignerBasicsProvider/ColorPicker";
+import Control from "@/DesignerBasicsProvider/Control";
 
 @Options({
   components: {
@@ -27,18 +28,20 @@ import ColorPicker from "@/DesignerBasicsProvider/ColorPicker";
     ColorPicker,
   },
   watch: {
-    selectedControl(n, o) {
-      if (n) {
-        n.selected = true;
-      } else {
-        this.selectedPropDes = "";
-      }
-      if (o) o.selected = false;
+    selectedControls(n: Array<any>, o: Array<any>) {
+      o.forEach((c) => {
+        c.selected = false;
+      });
+      n.forEach((c) => {
+        c.selected = true;
+      });
+      this.selectedPropDes = "";
     },
   },
 })
 export default class FormDesigner extends Vue {
-  selectedControl = null as any;
+  // : Array<Control>
+  selectedControls: Array<Control> = [];
   selectedPropDes = "";
   height = window.innerHeight;
   dragAction: dragActionType = {
@@ -47,6 +50,12 @@ export default class FormDesigner extends Vue {
     serialNumber: -1,
   };
   Controls: Array<ControlItemType> = [];
+
+  get CurrentSelectedControl() {
+    if (this.selectedControls.length) {
+      return this.selectedControls[0];
+    }
+  }
 
   PlaceControl(e: DragEvent) {
     let target = e.target as HTMLElement;
@@ -57,7 +66,7 @@ export default class FormDesigner extends Vue {
       let controlType = this.dragAction.controlType;
       let cName = controlType + this.Controls.length;
       this.Controls.push({
-        Id: Guid(),
+        Id: Guid().replace("-", ""),
         attr: {
           name: {
             lable: "名称",
@@ -92,7 +101,7 @@ export default class FormDesigner extends Vue {
         controlType,
       });
       this.$nextTick(() => {
-        this.selectedControl = this.$refs["FormContainer"].$refs[cName];
+        this.selectedControls = [this.$refs["FormContainer"].$refs[cName]];
       });
     }
   }
@@ -100,8 +109,8 @@ export default class FormDesigner extends Vue {
   GetNewPosition(target: HTMLElement, e: DragEvent) {
     let originalPosition = target.getBoundingClientRect();
     return {
-      left: parseFloat((e.x - originalPosition.x).toFixed(2)),
-      top: parseFloat((e.y - originalPosition.y).toFixed(2)),
+      left: Math.round(e.x - originalPosition.x),
+      top: Math.round(e.y - originalPosition.y),
     };
   }
 
@@ -149,10 +158,10 @@ export default class FormDesigner extends Vue {
   };
   oldProp = {} as any;
   SelectPropItem(k: string, i: number) {
-    this.selectedPropDes = this.selectedControl.props[k].des;
+    this.selectedPropDes = this.CurrentSelectedControl!.props[k].des;
     if (this.oldProp) this.oldProp.selected = false;
-    this.selectedControl.props[k].selected = true;
-    this.oldProp = this.selectedControl.props[k];
+    this.CurrentSelectedControl!.props[k].selected = true;
+    this.oldProp = this.CurrentSelectedControl!.props[k];
   }
 
   WindowResize() {
@@ -168,110 +177,120 @@ export default class FormDesigner extends Vue {
   }
 
   GetPropsFormControls() {
+    if (this.selectedControls.length != 1) return [];
     let propsFormControls: Array<JSX.Element> = [];
-    propsFormControls = Object.keys(this.selectedControl.props).map((k, i) => {
-      let minNumber = k == "left" || k == "top" ? -100000000 : 0;
-      let minKey = "min" + k.charAt(0).toUpperCase() + k.slice(1);
-      if (this.selectedControl.props[minKey])
-        minNumber = this.selectedControl.props[minKey].v;
+    propsFormControls = Object.keys(this.CurrentSelectedControl!.props).map(
+      (k, i) => {
+        let minNumber = k == "left" || k == "top" ? -100000000 : 0;
+        let minKey = "min" + k.charAt(0).toUpperCase() + k.slice(1);
+        if (this.CurrentSelectedControl!.props[minKey])
+          minNumber = this.CurrentSelectedControl!.props[minKey].v as number;
 
-      let propDataType = typeof this.selectedControl.props[k].v as any;
-      let propFormControl = <></>;
+        let propDataType = typeof this.CurrentSelectedControl!.props[k].v;
+        let propFormControl = <></>;
 
-      switch (propDataType) {
-        case "number":
-          propFormControl = (
-            <InputNumber
-              size="small"
-              min={minNumber}
-              step={0.1}
-              precision={2}
-              onChange={(v) => {
-                if (v == undefined || v == null || v < minNumber)
-                  this.selectedControl.props[k].v = minNumber;
-              }}
-              v-model={[this.selectedControl.props[k].v, "value"]}
-            />
-          );
-          break;
-        case "string":
-          if (k == "text") {
+        switch (propDataType) {
+          case "number":
             propFormControl = (
-              <Textarea
+              <InputNumber
                 size="small"
-                v-model={[this.selectedControl.props[k].v, "value"]}
-                onChange={(e: InputEvent) => {
-                  this.selectedControl.props[k].onChange &&
-                    this.selectedControl.props[k].onChange(e);
+                min={minNumber}
+                step={0.1}
+                precision={2}
+                onChange={(v) => {
+                  if (v == undefined || v == null || v < minNumber)
+                    this.CurrentSelectedControl!.props[k].v = minNumber;
                 }}
-                key={this.selectedControl.props.name?.v + k}
-              ></Textarea>
+                v-model={[this.CurrentSelectedControl!.props[k].v, "value"]}
+              />
             );
-          } else if (this.selectedControl.props[k].isColor) {
+            break;
+          case "string":
+            if (this.CurrentSelectedControl!.props[k].isTextarea) {
+              propFormControl = (
+                <Textarea
+                  size="small"
+                  v-model={[this.CurrentSelectedControl!.props[k].v, "value"]}
+                  onChange={(e: InputEvent) => {
+                    this.CurrentSelectedControl!.props[k].onChange &&
+                      this.CurrentSelectedControl!.props[k].onChange!(e);
+                  }}
+                  key={this.CurrentSelectedControl!.props.name?.v + k}
+                ></Textarea>
+              );
+            } else if (this.CurrentSelectedControl!.props[k].isColor) {
+              propFormControl = (
+                <ColorPicker
+                  {...{
+                    value: this.CurrentSelectedControl!.props[k].v,
+                    onChange: (e: string) =>
+                      (this.CurrentSelectedControl!.props[k].v = e),
+                  }}
+                ></ColorPicker>
+              );
+            } else {
+              propFormControl = (
+                <aInput
+                  size="small"
+                  v-model={[this.CurrentSelectedControl!.props[k].v, "value"]}
+                  onChange={(e: InputEvent) => {
+                    this.CurrentSelectedControl!.props[k].onChange &&
+                      this.CurrentSelectedControl!.props[k].onChange!(e);
+                  }}
+                ></aInput>
+              );
+            }
+            break;
+          case "object":
             propFormControl = (
-              <ColorPicker
-                {...{
-                  value: this.selectedControl.props[k].v,
-                  onChange: (e: string) =>
-                    (this.selectedControl.props[k].v = e),
-                }}
-              ></ColorPicker>
-            );
-          } else {
-            propFormControl = (
-              <aInput
+              <aSelect
+                v-model={[
+                  this.CurrentSelectedControl!.props[k].dataValue,
+                  "value",
+                ]}
                 size="small"
-                v-model={[this.selectedControl.props[k].v, "value"]}
-                onChange={(e: InputEvent) => {
-                  this.selectedControl.props[k].onChange &&
-                    this.selectedControl.props[k].onChange(e);
-                }}
-              ></aInput>
+                allowClear
+              >
+                {Object.keys(this.CurrentSelectedControl!.props[k].v).map(
+                  (pk) => (
+                    <SelectOption
+                      value={
+                        (this.CurrentSelectedControl!.props[k].v as any)[pk]
+                      }
+                    >
+                      {pk}
+                    </SelectOption>
+                  )
+                )}
+              </aSelect>
             );
-          }
-          break;
-        case "object":
-          propFormControl = (
-            <aSelect
-              v-model={[this.selectedControl.props[k].dataValue, "value"]}
-              size="small"
-              allowClear
-            >
-              {Object.keys(this.selectedControl.props[k].v).map((pk) => (
-                <SelectOption value={this.selectedControl.props[k].v[pk]}>
-                  {pk}
-                </SelectOption>
-              ))}
-            </aSelect>
-          );
-          break;
-      }
-      return (
-        <div
-          class={
-            "PropItem" +
-            (this.selectedControl.props[k].selected ? " ActivatePropItem" : "")
-          }
-          onMouseenter={() => {
-            this.SelectPropItem(k, i);
-          }}
-        >
-          <div class="lable">{this.selectedControl.props[k].lable}</div>
-          <div class="content" key={this.selectedControl.props.name?.v + k}>
-            {propFormControl}
+            break;
+        }
+        return (
+          <div
+            class={
+              "PropItem" +
+              (this.CurrentSelectedControl!.props[k].selected
+                ? " ActivatePropItem"
+                : "")
+            }
+            onMouseenter={() => {
+              this.SelectPropItem(k, i);
+            }}
+          >
+            <div class="lable">{this.CurrentSelectedControl!.props[k].lable}</div>
+            <div class="content" key={this.CurrentSelectedControl!.props.name?.v + k}>
+              {propFormControl}
+            </div>
           </div>
-        </div>
-      );
-    });
+        );
+      }
+    );
     return propsFormControls;
   }
 
   render() {
-    let props: Array<JSX.Element> = [];
-    if (this.selectedControl) {
-      props = this.GetPropsFormControls();
-    }
-
+    let props: Array<JSX.Element> = this.GetPropsFormControls();
     return (
       <div style={`height:${this.height}px`} id="DesignerWindow">
         <div class="ControlList">
@@ -295,8 +314,8 @@ export default class FormDesigner extends Vue {
             {...{
               Controls: this.Controls,
               ref: "FormContainer",
-              onSelectControl: (control: any) => {
-                this.selectedControl = control;
+              onSelectControl: (controls: any) => {
+                this.selectedControls = controls;
               },
             }}
           ></FormContainer>

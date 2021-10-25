@@ -2,7 +2,8 @@ import { Vue } from "vue-class-component";
 import "@/assets/css/DesignerBasicsProvider/DragHelper.less";
 import { Prop } from "vue-property-decorator";
 import { DragHelperMoveType, PropItemType } from "@/Util/ControlCommonType";
-import { DocumentEventCenter } from "@/Util/ControlCommonLib";
+import { CloneInstance, DocumentEventCenter } from "@/Util/ControlCommonLib";
+import Control from "./Control";
 
 export default class DragHelper extends Vue {
   @Prop({ default: true }) CanMove!: boolean;
@@ -40,11 +41,11 @@ export default class DragHelper extends Vue {
 
   Resize(e: MouseEvent) {
     let forbidWidth =
-      this.individualAdjustment != "top" &&
-      this.individualAdjustment != "bottom";
-    let forbidHeight =
       this.individualAdjustment != "left" &&
       this.individualAdjustment != "right";
+    let forbidHeight =
+      this.individualAdjustment != "top" &&
+      this.individualAdjustment != "bottom";
     let { minWidth, minHeight } = this.props;
     let x = e.movementX;
     let y = e.movementY;
@@ -65,8 +66,8 @@ export default class DragHelper extends Vue {
     }
     let w = (this.props.width.v as number) + x;
     let h = (this.props.height.v as number) + y;
-    if (w >= minWidth.v && forbidWidth) this.props.width.v = w;
-    if (h >= minHeight.v && forbidHeight) this.props.height.v = h;
+    if (w >= minWidth.v && forbidHeight) this.props.width.v = w;
+    if (h >= minHeight.v && forbidWidth) this.props.height.v = h;
   }
 
   Slide(e: MouseEvent) {
@@ -89,6 +90,19 @@ export default class DragHelper extends Vue {
     let target = e.target as HTMLElement;
     if (target.classList[0] == "dot") this.moveType = DragHelperMoveType.Resize;
     else this.moveType = DragHelperMoveType.Move;
+    if (this.CanMove) {
+      let CurrentSelectedControls = this.$parent.$parent.$parent.$parent
+        .selectedControls as Array<Control>;
+      CurrentSelectedControls.forEach((c) => {
+        if (c.Id && c.Id != this.$parent.Id) {
+          c.$refs["DragHelper"].moveType = this.moveType;
+          c.$refs[
+            "DragHelper"
+          ].individualAdjustment = this.individualAdjustment;
+          c.$refs["DragHelper"].adjustBasis = CloneInstance(this.adjustBasis);
+        }
+      });
+    }
   }
 
   CancelResize() {

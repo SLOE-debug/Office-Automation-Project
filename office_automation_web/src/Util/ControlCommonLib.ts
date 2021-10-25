@@ -118,6 +118,7 @@ export function GetDefaleProp(): { [x: string]: PropItemType } {
       lable: "文本",
       v: "默认内容",
       des: "控件显示的文本",
+      isTextarea: true,
     },
     fontSize: {
       lable: "字体大小",
