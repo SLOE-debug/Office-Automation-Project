@@ -6,7 +6,33 @@
   .SelectFloatLayer {
     position: absolute;
     background-color: rgba(85, 169, 238, 0.3);
-    z-index: 99999;
+    z-index: 9999;
     border: 1px dashed rgba(85, 169, 238);
   }
+}
+.tools {
+  width: 100%;
+  height: 30px;
+  border: 1px solid #c5c5c5;
+  box-sizing: border-box;
+  .toolItem {
+    float: left;
+    padding: 0 5px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 4px;
+    &:hover {
+      background-color: rgb(6, 123, 239);
+      color: white;
+    }
+  }
+}
+.CodeEditingArea {
+  width: 100%;
+  position: absolute;
+  height: 100%;
+  z-index: 10000;
 }

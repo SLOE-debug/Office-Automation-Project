@@ -51,7 +51,7 @@ export default class Control extends Vue {
   get Style() {
     let styleObj = {} as any;
     for (const k in this.props) {
-      if (this.props[k].isStyle) {
+      if (this.props[k].isStyle && k != "top" && k != "left") {
         let tempValue;
         if (typeof this.props[k].v != "object") tempValue = this.props[k].v;
         else tempValue = this.props[k].dataValue;
@@ -71,6 +71,7 @@ export default class Control extends Vue {
       height: this.props.height.v + "px",
       top: this.attr.top.v + "px",
       left: this.attr.left.v + "px",
+      cursor: "pointer",
     };
   }
   selected = null;
@@ -114,7 +115,7 @@ export default class Control extends Vue {
       >
         {{
           default: () => (
-            <div style={this.Style} id="Control">
+            <div style={{ ...this.Style, pointerEvents: "none" }} id="Control">
               <template></template>
             </div>
           ),

@@ -82,6 +82,11 @@ export function GetDefaleProp(): { [x: string]: PropItemType } {
       v: 20,
       des: "控件的最小高度",
     },
+    disabled: {
+      lable: "是否禁用",
+      v: false,
+      des: "控件是否禁用的",
+    },
     opacity: {
       lable: "透明度",
       v: 1,
@@ -161,4 +166,13 @@ export function CloneInstance(obj: any): any {
     }
   }
   return temp;
+}
+
+export function GetPathByDom(dom: HTMLElement) {
+  let arr: Array<HTMLElement> = [];
+  while (dom.parentElement) {
+    arr.push(dom.parentElement);
+    dom = dom.parentElement;
+  }
+  return arr;
 }

@@ -7,6 +7,7 @@ import {
   InputNumber,
   SelectOption,
   Textarea,
+  Switch,
 } from "ant-design-vue";
 import {
   ControlItemType,
@@ -31,16 +32,18 @@ import Control from "@/DesignerBasicsProvider/Control";
     selectedControls(n: Array<any>, o: Array<any>) {
       o.forEach((c) => {
         c.selected = false;
+        if (c.$refs["DragHelper"]) c.$refs["DragHelper"].important = false;
       });
-      n.forEach((c) => {
+      n.forEach((c, i) => {
         c.selected = true;
+        if (i == n.length - 1 && c.$refs["DragHelper"])
+          c.$refs["DragHelper"].important = true;
       });
       this.selectedPropDes = "";
     },
   },
 })
 export default class FormDesigner extends Vue {
-  // : Array<Control>
   selectedControls: Array<Control> = [];
   selectedPropDes = "";
   height = window.innerHeight;
@@ -54,6 +57,8 @@ export default class FormDesigner extends Vue {
   get CurrentSelectedControl() {
     if (this.selectedControls.length) {
       return this.selectedControls[0];
+    } else {
+      return null;
     }
   }
 
@@ -66,7 +71,7 @@ export default class FormDesigner extends Vue {
       let controlType = this.dragAction.controlType;
       let cName = controlType + this.Controls.length;
       this.Controls.push({
-        Id: Guid().replace("-", ""),
+        Id: Guid(),
         attr: {
           name: {
             lable: "名称",
@@ -177,8 +182,9 @@ export default class FormDesigner extends Vue {
   }
 
   GetPropsFormControls() {
-    if (this.selectedControls.length != 1) return [];
     let propsFormControls: Array<JSX.Element> = [];
+    if (this.selectedControls.length != 1) return propsFormControls;
+
     propsFormControls = Object.keys(this.CurrentSelectedControl!.props).map(
       (k, i) => {
         let minNumber = k == "left" || k == "top" ? -100000000 : 0;
@@ -215,7 +221,6 @@ export default class FormDesigner extends Vue {
                     this.CurrentSelectedControl!.props[k].onChange &&
                       this.CurrentSelectedControl!.props[k].onChange!(e);
                   }}
-                  key={this.CurrentSelectedControl!.props.name?.v + k}
                 ></Textarea>
               );
             } else if (this.CurrentSelectedControl!.props[k].isColor) {
@@ -265,6 +270,15 @@ export default class FormDesigner extends Vue {
               </aSelect>
             );
             break;
+          case "boolean":
+            propFormControl = (
+              <Switch
+                v-model={[this.CurrentSelectedControl!.props[k].v, "checked"]}
+                checkedChildren={"开"}
+                unCheckedChildren={"关"}
+              ></Switch>
+            );
+            break;
         }
         return (
           <div
@@ -278,8 +292,10 @@ export default class FormDesigner extends Vue {
               this.SelectPropItem(k, i);
             }}
           >
-            <div class="lable">{this.CurrentSelectedControl!.props[k].lable}</div>
-            <div class="content" key={this.CurrentSelectedControl!.props.name?.v + k}>
+            <div class="lable">
+              {this.CurrentSelectedControl!.props[k].lable}
+            </div>
+            <div class="content" key={this.CurrentSelectedControl!.Id}>
               {propFormControl}
             </div>
           </div>
@@ -309,7 +325,7 @@ export default class FormDesigner extends Vue {
             </div>
           ))}
         </div>
-        <div id="FormContainerArea">
+        <div id="FormContainerArea" ref="FormContainerAreaDom">
           <FormContainer
             {...{
               Controls: this.Controls,

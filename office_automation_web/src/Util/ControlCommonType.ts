@@ -5,7 +5,7 @@ export type dragActionType = {
 };
 export type PropItemType = {
   lable: string;
-  v: number | string | object;
+  v: number | string | object | boolean;
   dataValue?: string;
   des: string;
   isStyle?: boolean;
@@ -35,7 +35,7 @@ export enum DragType {
 
 export type ContextMenuItemType = {
   title: string;
-  onCilck: Function;
+  onClick: Function;
   show?: boolean;
 };
 
@@ -43,3 +43,13 @@ export type ContextMenuPosType = {
   top: number;
   left: number;
 };
+
+export type JustifyingType =
+  | "left"
+  | "verticalCenter"
+  | "right"
+  | "top"
+  | "horizontalCenter"
+  | "bottom";
+
+export type EqualType = "width" | "height" | "widthAndHeight";

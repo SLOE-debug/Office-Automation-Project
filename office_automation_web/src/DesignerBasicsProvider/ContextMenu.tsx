@@ -15,7 +15,7 @@ export default class ContextMenu extends Vue {
         {this.$store.getters.ContextMenus.map((m: ContextMenuItemType) => {
           if (m.show == false) return;
           return (
-            <div class="ContextMenu" onClick={m.onCilck as any}>
+            <div class="ContextMenu" onClick={m.onClick as any}>
               {m.title}
             </div>
           );

@@ -1,9 +1,10 @@
 import Control, { Include } from "@/DesignerBasicsProvider/Control";
+import { PropItemType } from "@/Util/ControlCommonType";
 import { message } from "ant-design-vue";
 
 @Include
 export default class PicControl extends Control {
-  props = {
+  props: { [x: string]: PropItemType } = {
     pictureAddress: {
       lable: "本地资源",
       v: {},
@@ -25,6 +26,8 @@ export default class PicControl extends Control {
     },
   };
   created() {
+    delete this.props["fontSize"];
+    delete this.props["color"];
     this.props.pictureAddress.v = this.$PhysicalResources;
   }
   render() {
@@ -33,10 +36,10 @@ export default class PicControl extends Control {
         draggable="false"
         src={
           this.props.webPictureAddress.v
-            ? this.props.webPictureAddress.v
-            : this.props.pictureAddress.dataValue
+            ? (this.props.webPictureAddress.v as string)
+            : (this.props.pictureAddress.dataValue as string)
         }
-        style="width:100%;height:100%"
+        style={"width:100%;height:100%"}
       />
     );
   }
