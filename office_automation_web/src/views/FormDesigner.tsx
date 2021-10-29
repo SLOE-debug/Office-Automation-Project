@@ -5,9 +5,8 @@ import {
   Input as aInput,
   Select as aSelect,
   InputNumber,
-  SelectOption,
-  Textarea,
   Switch,
+  message,
 } from "ant-design-vue";
 import {
   ControlItemType,
@@ -15,7 +14,6 @@ import {
   DragType,
 } from "@/Util/ControlCommonType";
 import { DocumentEventCenter, Guid } from "@/Util/ControlCommonLib";
-import { message } from "ant-design-vue";
 import ColorPicker from "@/DesignerBasicsProvider/ColorPicker";
 import Control from "@/DesignerBasicsProvider/Control";
 
@@ -24,8 +22,6 @@ import Control from "@/DesignerBasicsProvider/Control";
     InputNumber,
     aInput,
     aSelect,
-    SelectOption,
-    Textarea,
     ColorPicker,
   },
   watch: {
@@ -66,6 +62,7 @@ export default class FormDesigner extends Vue {
     let target = e.target as HTMLElement;
     let isDragHelper = target.parentElement?.id == "FormContainer";
     if (isDragHelper) target = target.parentElement!;
+
     if (target.id == "FormContainer" || isDragHelper) {
       let { left, top } = this.GetNewPosition(target, e);
       let controlType = this.dragAction.controlType;
@@ -214,14 +211,14 @@ export default class FormDesigner extends Vue {
           case "string":
             if (this.CurrentSelectedControl!.props[k].isTextarea) {
               propFormControl = (
-                <Textarea
+                <aInput.TextArea
                   size="small"
                   v-model={[this.CurrentSelectedControl!.props[k].v, "value"]}
                   onChange={(e: InputEvent) => {
                     this.CurrentSelectedControl!.props[k].onChange &&
                       this.CurrentSelectedControl!.props[k].onChange!(e);
                   }}
-                ></Textarea>
+                ></aInput.TextArea>
               );
             } else if (this.CurrentSelectedControl!.props[k].isColor) {
               propFormControl = (
@@ -258,13 +255,13 @@ export default class FormDesigner extends Vue {
               >
                 {Object.keys(this.CurrentSelectedControl!.props[k].v).map(
                   (pk) => (
-                    <SelectOption
+                    <aSelect.Option
                       value={
                         (this.CurrentSelectedControl!.props[k].v as any)[pk]
                       }
                     >
                       {pk}
-                    </SelectOption>
+                    </aSelect.Option>
                   )
                 )}
               </aSelect>

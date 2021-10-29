@@ -1,7 +1,6 @@
 import Control, { Include } from "@/DesignerBasicsProvider/Control";
 import { PropItemType } from "@/Util/ControlCommonType";
 import { Button } from "ant-design-vue";
-import { SizeType } from "_ant-design-vue@2.2.8@ant-design-vue/lib/config-provider";
 
 @Include
 export default class ButtonControl extends Control {

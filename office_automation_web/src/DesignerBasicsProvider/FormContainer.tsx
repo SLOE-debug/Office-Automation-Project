@@ -19,7 +19,6 @@ import {
 import ContextMenu from "./ContextMenu";
 import Control from "./Control";
 import * as monaco from "monaco-editor";
-let tsworker = require("monaco-editor/esm/vs/language/typescript/tsWorker.js");
 
 @Options({
   emits: ["SelectControl"],
@@ -271,7 +270,7 @@ export default class FormContainer extends Vue {
   }
 
   FormContainerAreaRect = new DOMRect();
-  FormContainerAreaDom = (null as any) as HTMLElement;
+  FormContainerAreaDom = null as any as HTMLElement;
   GlobalMenuControl(e: MouseEvent) {
     this.$store.commit("SetContextMenuPos", {
       top:
@@ -310,9 +309,11 @@ export default class FormContainer extends Vue {
     DocumentEventCenter.call(this, this.documentEvents);
     window.addEventListener("blur", this.LeaveCurrentPage);
     this.$nextTick(() => {
-      this.FormContainerAreaRect = this.$parent.$refs.FormContainerAreaDom.getBoundingClientRect();
+      this.FormContainerAreaRect =
+        this.$parent.$refs.FormContainerAreaDom.getBoundingClientRect();
       this.FormContainerAreaDom = this.$parent.$refs.FormContainerAreaDom;
-      this.FormContainerDomRect = this.$refs.FormContainerDom.getBoundingClientRect();
+      this.FormContainerDomRect =
+        this.$refs.FormContainerDom.getBoundingClientRect();
       this.CreateCodeEditor();
     });
   }
@@ -491,12 +492,28 @@ export default class FormContainer extends Vue {
 
   editorInstance: monaco.editor.IStandaloneCodeEditor = null as any;
   CreateCodeEditor() {
-    console.log(tsworker);
+    monaco.languages.typescript.typescriptDefaults.setWorkerOptions({
+      customWorkerPath: require.resolve("@/Util/CustomTs2JsWorker").toString(),
+    });
+    monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+      target: 99,
+      jsx: 1,
+      allowNonTsExtensions: true,
+      declaration: true,
+      noLibCheck: true,
+    });
     this.editorInstance = monaco.editor.create(this.$refs["CodeEditingArea"], {
-      value: "function hello() {\n\talert('Hello world!');\n}",
+      value: ["class PageForm{", "}"].join("\n"),
       language: "typescript",
       theme: "vs-dark",
     });
+  }
+
+  async GetJavaScript() {
+    const model = this.editorInstance.getModel();
+    const worker = await monaco.languages.typescript.getTypeScriptWorker();
+    const thisWorker = await worker(model!.uri);
+    console.log(thisWorker);
   }
 
   render() {
@@ -505,7 +522,11 @@ export default class FormContainer extends Vue {
         .length > 1;
     return (
       <>
-        <div ref="CodeEditingArea" class="CodeEditingArea"></div>
+        <div
+          ref="CodeEditingArea"
+          class="CodeEditingArea"
+          onDblclick={this.GetJavaScript}
+        ></div>
         <div class="tools">
           <div
             class="toolItem"

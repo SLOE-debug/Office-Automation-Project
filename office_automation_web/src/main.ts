@@ -13,7 +13,4 @@ var app = createApp(App);
 app.config.globalProperties.$Api = InstallAxios();
 // 注册全部组件
 InstallAllControl(app);
-app
-  .use(router)
-  .use(vuex)
-  .mount("#app");
+app.use(router).use(vuex).mount("#app");
