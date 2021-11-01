@@ -18,7 +18,7 @@ import {
 } from "@/Util/ControlCommonType";
 import ContextMenu from "./ContextMenu";
 import Control from "./Control";
-import * as monaco from "monaco-editor";
+import * as monaco from "monaco-editor/esm/vs/editor/editor.api.js";
 
 @Options({
   emits: ["SelectControl"],
@@ -492,18 +492,17 @@ export default class FormContainer extends Vue {
 
   editorInstance: monaco.editor.IStandaloneCodeEditor = null as any;
   CreateCodeEditor() {
-    monaco.languages.typescript.typescriptDefaults.setWorkerOptions({
-      customWorkerPath: require.resolve("@/Util/CustomTs2JsWorker").toString(),
-    });
-    monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-      target: 99,
-      jsx: 1,
-      allowNonTsExtensions: true,
-      declaration: true,
-      noLibCheck: true,
-    });
     this.editorInstance = monaco.editor.create(this.$refs["CodeEditingArea"], {
-      value: ["class PageForm{", "}"].join("\n"),
+      value: [
+        "// 双击编辑器将使它执行",
+        "class PageForm {",
+        "\tname: string = '张三'",
+        "\tSay() {",
+        "\t\tconsole.log(`我叫${this.name}`)",
+        "\t}",
+        "}",
+        "new PageForm().Say()"
+      ].join("\n"),
       language: "typescript",
       theme: "vs-dark",
     });
@@ -512,8 +511,14 @@ export default class FormContainer extends Vue {
   async GetJavaScript() {
     const model = this.editorInstance.getModel();
     const worker = await monaco.languages.typescript.getTypeScriptWorker();
-    const thisWorker = await worker(model!.uri);
-    console.log(thisWorker);
+    const tsWorker = await worker(model!.uri);
+    let problems = await tsWorker.getSemanticDiagnostics(model!.uri.toString());
+    if (problems.length == 0)
+      eval(
+        await (
+          await tsWorker.getEmitOutput(model!.uri.toString())
+        ).outputFiles[0].text
+      );
   }
 
   render() {
