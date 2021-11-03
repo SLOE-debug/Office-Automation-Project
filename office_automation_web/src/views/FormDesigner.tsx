@@ -16,6 +16,7 @@ import {
 import { DocumentEventCenter, Guid } from "@/Util/ControlCommonLib";
 import ColorPicker from "@/DesignerBasicsProvider/ColorPicker";
 import Control from "@/DesignerBasicsProvider/Control";
+import { gsap } from "gsap";
 
 @Options({
   components: {
@@ -48,7 +49,43 @@ export default class FormDesigner extends Vue {
     controlType: "",
     serialNumber: -1,
   };
-  Controls: Array<ControlItemType> = [];
+  Controls: Array<ControlItemType> = [
+    {
+      Id: Guid(),
+      attr: {
+        name: {
+          lable: "名称",
+          v: "btn_1",
+          des: "该控件的唯一名称",
+          onChange: (e: InputEvent) => {
+            if (
+              this.Controls.filter(
+                (c) => c.attr.name.v == (e.target as HTMLInputElement).value
+              ).length == 2
+            ) {
+              message.error({
+                content: "请勿和其他控件名称重名，该名称应该是唯一的！",
+                duration: 5,
+              });
+            }
+          },
+        },
+        top: {
+          lable: "上",
+          v: 10,
+          des: "该控件距窗体顶部距离",
+          isStyle: true,
+        },
+        left: {
+          lable: "左",
+          v: 10,
+          des: "该控件的距窗体左侧的距离",
+          isStyle: true,
+        },
+      },
+      controlType: "Button",
+    },
+  ];
 
   get CurrentSelectedControl() {
     if (this.selectedControls.length) {
@@ -302,11 +339,25 @@ export default class FormDesigner extends Vue {
     return propsFormControls;
   }
 
+  Preview(e: MouseEvent) {
+    this.Controls.forEach((c) => {
+      console.log(
+        this.$refs["FormContainer"].$refs[c.attr.name.v.toString()].props
+      );
+    });
+    e.stopPropagation();
+  }
+
   render() {
     let props: Array<JSX.Element> = this.GetPropsFormControls();
     return (
       <div style={`height:${this.height}px`} id="DesignerWindow">
         <div class="ControlList">
+          <div class="Tools">
+            <div class="ToolsItem" onClick={this.Preview}>
+              预览
+            </div>
+          </div>
           {this.$ControlList.map((c) => (
             <div
               class="ClItem"

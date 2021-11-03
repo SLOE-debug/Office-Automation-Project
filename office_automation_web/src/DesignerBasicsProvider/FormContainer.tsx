@@ -18,7 +18,7 @@ import {
 } from "@/Util/ControlCommonType";
 import ContextMenu from "./ContextMenu";
 import Control from "./Control";
-import * as monaco from "monaco-editor/esm/vs/editor/editor.api.js";
+import { CodeEditor } from "./codeEditor";
 
 @Options({
   emits: ["SelectControl"],
@@ -304,7 +304,7 @@ export default class FormContainer extends Vue {
     this.shiftKeyActivate = false;
     this.controlKeyActivate = false;
   }
-
+  codeEditor: CodeEditor | undefined;
   created() {
     DocumentEventCenter.call(this, this.documentEvents);
     window.addEventListener("blur", this.LeaveCurrentPage);
@@ -314,7 +314,19 @@ export default class FormContainer extends Vue {
       this.FormContainerAreaDom = this.$parent.$refs.FormContainerAreaDom;
       this.FormContainerDomRect =
         this.$refs.FormContainerDom.getBoundingClientRect();
-      this.CreateCodeEditor();
+      this.codeEditor = new CodeEditor(
+        this.$refs["CodeEditingArea"],
+        [
+          "// 双击编辑器将使它执行",
+          "class PageForm implements Form {",
+          "\tcontrols: { [x: string]: Control }",
+          "\tbtn1_Click(data: any, e: Event) {",
+          "\t\tconsole.log(data,e)",
+          "\t\tthis.controls['btn'].width.v = 10",
+          "\t}",
+          "}",
+        ].join("\n")
+      );
     });
   }
 
@@ -490,37 +502,6 @@ export default class FormContainer extends Vue {
     }
   }
 
-  editorInstance: monaco.editor.IStandaloneCodeEditor = null as any;
-  CreateCodeEditor() {
-    this.editorInstance = monaco.editor.create(this.$refs["CodeEditingArea"], {
-      value: [
-        "// 双击编辑器将使它执行",
-        "class PageForm {",
-        "\tname: string = '张三'",
-        "\tSay() {",
-        "\t\tconsole.log(`我叫${this.name}`)",
-        "\t}",
-        "}",
-        "new PageForm().Say()"
-      ].join("\n"),
-      language: "typescript",
-      theme: "vs-dark",
-    });
-  }
-
-  async GetJavaScript() {
-    const model = this.editorInstance.getModel();
-    const worker = await monaco.languages.typescript.getTypeScriptWorker();
-    const tsWorker = await worker(model!.uri);
-    let problems = await tsWorker.getSemanticDiagnostics(model!.uri.toString());
-    if (problems.length == 0)
-      eval(
-        await (
-          await tsWorker.getEmitOutput(model!.uri.toString())
-        ).outputFiles[0].text
-      );
-  }
-
   render() {
     let manyControlShow =
       this.$parent.selectedControls.filter((c: any) => !c.SelectControls)
@@ -530,7 +511,7 @@ export default class FormContainer extends Vue {
         <div
           ref="CodeEditingArea"
           class="CodeEditingArea"
-          onDblclick={this.GetJavaScript}
+          style="display:none"
         ></div>
         <div class="tools">
           <div

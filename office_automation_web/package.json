@@ -21,6 +21,7 @@
     "ant-design-vue": "^2.2.8",
     "axios": "^0.21.4",
     "babel-plugin-import": "^1.13.3",
+    "gsap": "^3.8.0",
     "less": "^3.0.4",
     "less-loader": "^5.0.0",
     "monaco-editor": "^0.29.1",
