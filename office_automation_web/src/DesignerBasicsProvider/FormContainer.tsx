@@ -1,7 +1,7 @@
 import { Options, Vue } from "vue-class-component";
 import DragHelper from "./DragHelper";
 import "@/assets/css/DesignerBasicsProvider/FormContainer.less";
-import { Prop } from "vue-property-decorator";
+import { Prop, Watch } from "vue-property-decorator";
 import {
   CloneInstance,
   DocumentEventCenter,
@@ -18,7 +18,7 @@ import {
 } from "@/Util/ControlCommonType";
 import ContextMenu from "./ContextMenu";
 import Control from "./Control";
-import { CodeEditor } from "./codeEditor";
+import { CodeEditor } from "./CodeEditor";
 
 @Options({
   emits: ["SelectControl"],
@@ -103,20 +103,22 @@ export default class FormContainer extends Vue {
     attr: { [x: string]: PropItemType };
     props: { [x: string]: PropItemType };
   }> | null = null;
-  PasteN = 1;
+  pasteN = 1;
   cControl(compulsive: boolean = false) {
     if (
       (this.controlKeyActivate && this.$parent.selectedControls.length) ||
       compulsive
     ) {
-      this.copyControlTypes = this.$parent.selectedControls.map((c: any) => {
-        return {
-          Type: c.Type,
-          attr: c.attr,
-          props: c.props,
-        };
-      });
-      this.PasteN = 1;
+      this.copyControlTypes = this.$parent.selectedControls.map(
+        (c: Control) => {
+          return {
+            Type: c.Type,
+            attr: c.attr,
+            props: c.props,
+          };
+        }
+      );
+      this.pasteN = 1;
     } else {
       this.copyControlTypes = null;
     }
@@ -130,8 +132,8 @@ export default class FormContainer extends Vue {
         delete props["top"];
         delete props["left"];
         attr.name.v = c.Type + this.Controls.length;
-        (attr.top.v as number) += this.PasteN * 20;
-        (attr.left.v as number) += this.PasteN * 20;
+        (attr.top.v as number) += this.pasteN * 20;
+        (attr.left.v as number) += this.pasteN * 20;
         this.Controls.push({
           Id: Guid(),
           attr,
@@ -139,7 +141,7 @@ export default class FormContainer extends Vue {
           controlType: c.Type,
         });
       });
-      this.PasteN++;
+      this.pasteN++;
     }
   }
   aControl() {
@@ -269,18 +271,18 @@ export default class FormContainer extends Vue {
     });
   }
 
-  FormContainerAreaRect = new DOMRect();
-  FormContainerAreaDom = null as any as HTMLElement;
+  formContainerAreaRect = new DOMRect();
+  formContainerAreaDom = null as any as HTMLElement;
   GlobalMenuControl(e: MouseEvent) {
     this.$store.commit("SetContextMenuPos", {
       top:
         e.y +
-        this.FormContainerAreaDom.scrollTop -
-        this.FormContainerAreaRect.y,
+        this.formContainerAreaDom.scrollTop -
+        this.formContainerAreaRect.y,
       left:
         e.x +
-        this.FormContainerAreaDom.scrollLeft -
-        this.FormContainerAreaRect.x,
+        this.formContainerAreaDom.scrollLeft -
+        this.formContainerAreaRect.x,
     });
     if (
       GetPathByDom(e.target as HTMLElement).find(
@@ -309,24 +311,11 @@ export default class FormContainer extends Vue {
     DocumentEventCenter.call(this, this.documentEvents);
     window.addEventListener("blur", this.LeaveCurrentPage);
     this.$nextTick(() => {
-      this.FormContainerAreaRect =
+      this.formContainerAreaRect =
         this.$parent.$refs.FormContainerAreaDom.getBoundingClientRect();
-      this.FormContainerAreaDom = this.$parent.$refs.FormContainerAreaDom;
-      this.FormContainerDomRect =
+      this.formContainerAreaDom = this.$parent.$refs.FormContainerAreaDom;
+      this.formContainerDomRect =
         this.$refs.FormContainerDom.getBoundingClientRect();
-      this.codeEditor = new CodeEditor(
-        this.$refs["CodeEditingArea"],
-        [
-          "// 双击编辑器将使它执行",
-          "class PageForm implements Form {",
-          "\tcontrols: { [x: string]: Control }",
-          "\tbtn1_Click(data: any, e: Event) {",
-          "\t\tconsole.log(data,e)",
-          "\t\tthis.controls['btn'].width.v = 10",
-          "\t}",
-          "}",
-        ].join("\n")
-      );
     });
   }
 
@@ -334,21 +323,49 @@ export default class FormContainer extends Vue {
     window.removeEventListener("blur", this.LeaveCurrentPage);
     DocumentEventCenter.call(this, this.documentEvents, true);
   }
+  showCodeEditingArea = false;
+  @Watch("showCodeEditingArea")
+  showCodeEditingAreaWatch(n: boolean, o: boolean) {
+    if (!this.codeEditor) {
+      this.$nextTick(() => {
+        this.codeEditor = new CodeEditor(
+          this.$refs["CodeEditingArea"],
+          [
+            "class PageForm implements Form {",
+            "\tcontrols: { [x: string]: Control }",
+            "}",
+          ].join("\n"),
+          this
+        );
+      });
+    }
+  }
+
+  globalMenuControlItems = [
+    {
+      title: "查看代码",
+      show: !this.showCodeEditingArea,
+      onClick: () => (this.showCodeEditingArea = true),
+    },
+  ];
 
   prominentControlInstance: Control = null as any;
   ControlContextmenu(e: MouseEvent) {
     if (!this.$parent.selectedControls.length) return;
     let moveLevel = this.$parent.selectedControls.length == 1;
     let operationControls = this.$parent.selectedControls.filter(
-      (c: any) => !c.SelectControls
+      (c: Control | FormContainer) => !(c as FormContainer).SelectControls
     ).length;
     this.$store.commit("SetContextMenus", [
+      ...this.globalMenuControlItems,
       {
         title: "置于顶层",
+        show: operationControls,
         onClick: this.BringToFront,
       },
       {
         title: "置于底层",
+        show: operationControls,
         onClick: this.AtTheBottom,
       },
       {
@@ -368,12 +385,12 @@ export default class FormContainer extends Vue {
       },
       {
         title: "上移一层",
-        show: moveLevel,
+        show: moveLevel && operationControls,
         onClick: () => this.MoveUpALayerOf(true),
       },
       {
         title: "下移一层",
-        show: moveLevel,
+        show: moveLevel && operationControls,
         onClick: () => this.MoveUpALayerOf(),
       },
     ]);
@@ -393,20 +410,20 @@ export default class FormContainer extends Vue {
     let willControlArr = [cName];
     this.prominentControlInstance = this.$refs[cName];
     let currentSelectedControls = this.$parent.selectedControls.filter(
-      (control: any) => {
-        if (control.Id) {
-          if (control.Id == this.prominentControlInstance.Id) {
+      (control: Control | FormContainer) => {
+        if ((control as Control).Id) {
+          if ((control as Control).Id == this.prominentControlInstance.Id) {
             control.$refs["DragHelper"].important = true;
           } else {
             control.$refs["DragHelper"].important = false;
           }
         }
-        return !control.SelectControls;
+        return !(control as FormContainer).SelectControls;
       }
-    );
+    ) as Array<Control>;
     let currentSelectedControlNames = currentSelectedControls.map(
       (control: Control) => control.props.name.v.toString()
-    ) as Array<string>;
+    );
     if (this.altKeyActivate) {
       currentSelectedControlNames = currentSelectedControlNames.filter(
         (control) => control != cName
@@ -442,16 +459,18 @@ export default class FormContainer extends Vue {
     y: 0,
   };
 
-  FormContainerDomRect = new DOMRect();
-  PlaceSelectFloatLayerTime = 0;
+  formContainerDomRect = new DOMRect();
+  placeTime = 0;
+  // delayPlaceSelectFloatLayer = 0;
   PlaceSelectFloatLayer(e: MouseEvent) {
-    this.PlaceSelectFloatLayerTime = e.timeStamp;
+    if (e.button != 0) return;
+    this.placeTime = e.timeStamp;
     this.selectFloatLayerEnable = true;
     let x = Math.round(
-      e.x + this.FormContainerAreaDom.scrollLeft - this.FormContainerDomRect.x
+      e.x + this.formContainerAreaDom.scrollLeft - this.formContainerDomRect.x
     );
     let y = Math.round(
-      e.y + this.FormContainerAreaDom.scrollTop - this.FormContainerDomRect.y
+      e.y + this.formContainerAreaDom.scrollTop - this.formContainerDomRect.y
     );
     this.originalCoordinates = {
       x,
@@ -461,6 +480,7 @@ export default class FormContainer extends Vue {
     this.selectFloatLayerAttr.left = x;
     this.selectFloatLayerAttr.width = 0;
     this.selectFloatLayerAttr.height = 0;
+    e.stopPropagation();
   }
   ClearSelectFloatLayer(e: MouseEvent) {
     let SelectControls = this.Controls.filter((c) => {
@@ -484,10 +504,10 @@ export default class FormContainer extends Vue {
   ResizeSelectFloatLayer(e: MouseEvent) {
     if (this.selectFloatLayerEnable) {
       let currentX = Math.round(
-        e.x + this.FormContainerAreaDom.scrollLeft - this.FormContainerDomRect.x
+        e.x + this.formContainerAreaDom.scrollLeft - this.formContainerDomRect.x
       );
       let currentY = Math.round(
-        e.y + this.FormContainerAreaDom.scrollTop - this.FormContainerDomRect.y
+        e.y + this.formContainerAreaDom.scrollTop - this.formContainerDomRect.y
       );
       let w = Math.abs(currentX - this.originalCoordinates.x);
       let h = Math.abs(currentY - this.originalCoordinates.y);
@@ -502,82 +522,59 @@ export default class FormContainer extends Vue {
     }
   }
 
-  render() {
+  GetTools() {
+    let tools: Array<JSX.Element> = [];
     let manyControlShow =
-      this.$parent.selectedControls.filter((c: any) => !c.SelectControls)
-        .length > 1;
+      this.$parent.selectedControls.filter(
+        (c: Control | FormContainer) => !(c as FormContainer).SelectControls
+      ).length > 1;
+    if (manyControlShow) {
+      tools = [
+        <div class="toolItem" onClick={() => this.Justifying("left")}>
+          左对齐
+        </div>,
+        <div class="toolItem" onClick={() => this.Justifying("verticalCenter")}>
+          垂直居中对齐
+        </div>,
+        <div class="toolItem" onClick={() => this.Justifying("right")}>
+          右对齐
+        </div>,
+        <div class="toolItem" onClick={() => this.Justifying("top")}>
+          顶部对齐
+        </div>,
+        <div
+          class="toolItem"
+          onClick={() => this.Justifying("horizontalCenter")}
+        >
+          横向居中对齐
+        </div>,
+        <div class="toolItem" onClick={() => this.Justifying("bottom")}>
+          底部对齐
+        </div>,
+        <div class="toolItem" onClick={() => this.EqualSize("width")}>
+          同宽
+        </div>,
+        <div class="toolItem" onClick={() => this.EqualSize("height")}>
+          同高
+        </div>,
+        <div class="toolItem" onClick={() => this.EqualSize("widthAndHeight")}>
+          同宽&同高
+        </div>,
+      ];
+    }
+    return tools;
+  }
+
+  render() {
     return (
       <>
         <div
           ref="CodeEditingArea"
           class="CodeEditingArea"
-          style="display:none"
+          v-show={this.showCodeEditingArea}
+          onDblclick={() => this.codeEditor?.GetJavaScript()}
         ></div>
-        <div class="tools">
-          <div
-            class="toolItem"
-            v-show={manyControlShow}
-            onClick={() => this.Justifying("left")}
-          >
-            左对齐
-          </div>
-          <div
-            class="toolItem"
-            v-show={manyControlShow}
-            onClick={() => this.Justifying("verticalCenter")}
-          >
-            垂直居中对齐
-          </div>
-          <div
-            class="toolItem"
-            v-show={manyControlShow}
-            onClick={() => this.Justifying("right")}
-          >
-            右对齐
-          </div>
-          <div
-            class="toolItem"
-            v-show={manyControlShow}
-            onClick={() => this.Justifying("top")}
-          >
-            顶部对齐
-          </div>
-          <div
-            class="toolItem"
-            v-show={manyControlShow}
-            onClick={() => this.Justifying("horizontalCenter")}
-          >
-            横向居中对齐
-          </div>
-          <div
-            class="toolItem"
-            v-show={manyControlShow}
-            onClick={() => this.Justifying("bottom")}
-          >
-            底部对齐
-          </div>
-          <div
-            class="toolItem"
-            v-show={manyControlShow}
-            onClick={() => this.EqualSize("width")}
-          >
-            同宽
-          </div>
-          <div
-            class="toolItem"
-            v-show={manyControlShow}
-            onClick={() => this.EqualSize("height")}
-          >
-            同高
-          </div>
-          <div
-            class="toolItem"
-            v-show={manyControlShow}
-            onClick={() => this.EqualSize("widthAndHeight")}
-          >
-            同宽&同高
-          </div>
-        </div>
+        <div class="tools">{...this.GetTools()}</div>
         <ContextMenu />
         <DragHelper
           {...{
@@ -595,15 +592,17 @@ export default class FormContainer extends Vue {
           }}
         >
           {{
-            default: () => (
-              <>
+            default: () => {
+              return (
                 <div
                   style={this.Style}
                   id="FormContainer"
                   ref="FormContainerDom"
+                  onContextmenu={this.ControlContextmenu}
                   onClick={(e: MouseEvent) => {
-                    if (e.timeStamp - this.PlaceSelectFloatLayerTime < 150)
+                    if (e.timeStamp - this.placeTime < 150) {
                       this.SelectControls(null, e);
+                    }
                   }}
                   onMousedown={this.PlaceSelectFloatLayer}
                 >
@@ -618,7 +617,6 @@ export default class FormContainer extends Vue {
                       <control
                         key={c.Id}
                         Id={c.Id}
-                        onContextmenu={this.ControlContextmenu}
                         attr={c.attr}
                         transmitProps={c.props}
                         style={"z-index:" + (i + 1)}
@@ -632,8 +630,8 @@ export default class FormContainer extends Vue {
                     );
                   })}
                 </div>
-              </>
-            ),
+              );
+            },
           }}
         </DragHelper>
       </>

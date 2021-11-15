@@ -28,8 +28,8 @@ function RplaceTemplate(JsxDom: any, render: Function) {
 export function Include(ctor: any) {
   let baseRender = ctor.__vccOpts.extends.render;
   // AOP替换当前类的Render方法
-  ctor.__vccOpts.render = (function(render) {
-    return function(this: Vue) {
+  ctor.__vccOpts.render = (function (render) {
+    return function (this: Vue) {
       // 获取父类的JsxDom
       let DragHelperDom = baseRender.apply(this);
       let BaseDom = DragHelperDom.children.default();
@@ -49,7 +49,7 @@ export default class Control extends Vue {
   @Prop({ default: null }) transmitProps!: { [x: string]: PropItemType };
   @Prop() Id!: string;
   get Style() {
-    let styleObj = {} as any;
+    let styleObj = {} as { [x: string]: string };
     for (const k in this.props) {
       if (this.props[k].isStyle && k != "top" && k != "left") {
         let tempValue;
@@ -74,7 +74,7 @@ export default class Control extends Vue {
       cursor: "pointer",
     };
   }
-  selected = null;
+  selected = null as unknown;
   @Watch("selected")
   selectedWatch(n: boolean, o: boolean) {
     if (typeof o == "boolean") {

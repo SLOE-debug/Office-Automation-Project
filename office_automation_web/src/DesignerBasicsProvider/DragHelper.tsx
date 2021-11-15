@@ -90,7 +90,8 @@ export default class DragHelper extends Vue {
   BeginAdjust(e: MouseEvent) {
     if (e.button != 0) return;
     let target = e.target as HTMLElement;
-    if (target.classList[0] == "dot") this.moveType = DragHelperMoveType.Resize;
+    if (target.classList[0] == "dot")
+      this.moveType = DragHelperMoveType.Resize;
     else this.moveType = DragHelperMoveType.Move;
     if (this.CanMove) {
       let CurrentSelectedControls = this.$parent.$parent.$parent.$parent
@@ -98,9 +99,8 @@ export default class DragHelper extends Vue {
       CurrentSelectedControls.forEach((c) => {
         if (c.Id && c.Id != this.$parent.Id) {
           c.$refs["DragHelper"].moveType = this.moveType;
-          c.$refs[
-            "DragHelper"
-          ].individualAdjustment = this.individualAdjustment;
+          c.$refs["DragHelper"].individualAdjustment =
+            this.individualAdjustment;
           c.$refs["DragHelper"].adjustBasis = CloneInstance(this.adjustBasis);
         }
       });
@@ -128,43 +128,16 @@ export default class DragHelper extends Vue {
     let className = "HelperBlock";
 
     if (this.moveType == DragHelperMoveType.None) {
+      if (this.important) className += " important";
       dots = [
-        <div
-          class={`dot top left seResize ${this.important ? "important" : ""}`}
-          v-show={this.tl}
-        ></div>,
-        <div
-          class={`dot top right neResize ${this.important ? "important" : ""}`}
-          v-show={this.tr}
-        ></div>,
-        <div
-          class={`dot bottom left neResize ${
-            this.important ? "important" : ""
-          }`}
-          v-show={this.bl}
-        ></div>,
-        <div
-          class={`dot bottom right seResize ${
-            this.important ? "important" : ""
-          }`}
-          v-show={this.br}
-        ></div>,
-        <div
-          class={`dot top nResize ${this.important ? "important" : ""}`}
-          v-show={this.t}
-        ></div>,
-        <div
-          class={`dot bottom nResize ${this.important ? "important" : ""}`}
-          v-show={this.b}
-        ></div>,
-        <div
-          class={`dot left eResize ${this.important ? "important" : ""}`}
-          v-show={this.l}
-        ></div>,
-        <div
-          class={`dot right eResize ${this.important ? "important" : ""}`}
-          v-show={this.r}
-        ></div>,
+        <div class={`dot top left seResize`} v-show={this.tl}></div>,
+        <div class={`dot top right neResize`} v-show={this.tr}></div>,
+        <div class={`dot bottom left neResize`} v-show={this.bl}></div>,
+        <div class={`dot bottom right seResize`} v-show={this.br}></div>,
+        <div class={`dot top nResize`} v-show={this.t}></div>,
+        <div class={`dot bottom nResize`} v-show={this.b}></div>,
+        <div class={`dot left eResize`} v-show={this.l}></div>,
+        <div class={`dot right eResize`} v-show={this.r}></div>,
       ];
     } else {
       if (this.CanMove) className += " HelperBlockMoving";

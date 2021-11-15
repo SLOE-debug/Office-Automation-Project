@@ -16,7 +16,6 @@ import {
 import { DocumentEventCenter, Guid } from "@/Util/ControlCommonLib";
 import ColorPicker from "@/DesignerBasicsProvider/ColorPicker";
 import Control from "@/DesignerBasicsProvider/Control";
-import { gsap } from "gsap";
 
 @Options({
   components: {
@@ -26,7 +25,7 @@ import { gsap } from "gsap";
     ColorPicker,
   },
   watch: {
-    selectedControls(n: Array<any>, o: Array<any>) {
+    selectedControls(n: Array<Control>, o: Array<Control>) {
       o.forEach((c) => {
         c.selected = false;
         if (c.$refs["DragHelper"]) c.$refs["DragHelper"].important = false;
@@ -187,7 +186,7 @@ export default class FormDesigner extends Vue {
     }
   }
 
-  documentEvents: { [x: string]: any } = {
+  documentEvents: { [x: string]: Function } = {
     drop: this.DragComplete,
     dragover: (e: DragEvent) => {
       e.preventDefault();
@@ -378,7 +377,7 @@ export default class FormDesigner extends Vue {
             {...{
               Controls: this.Controls,
               ref: "FormContainer",
-              onSelectControl: (controls: any) => {
+              onSelectControl: (controls: Array<Control>) => {
                 this.selectedControls = controls;
               },
             }}

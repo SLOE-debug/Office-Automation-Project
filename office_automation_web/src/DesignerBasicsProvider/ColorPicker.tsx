@@ -175,7 +175,7 @@ export default class DragHelper extends Vue {
     else this.colorSlidingBorderColor = "white";
   }
 
-  documentEvents: { [x: string]: any } = {
+  documentEvents: { [x: string]: Function } = {
     mouseup: () => {
       this.canMoveSliding = false;
       this.canMoveColorSliding = false;

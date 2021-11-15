@@ -5,9 +5,18 @@ import * as monaco from "monaco-editor/esm/vs/editor/editor.api.js";
 export class CodeEditor {
   private dom: HTMLElement;
   public Instance: monaco.editor.IStandaloneCodeEditor | undefined;
-  constructor(_dom: HTMLElement, codeText: string) {
+  constructor(_dom: HTMLElement, codeText: string, vueInstace: any) {
     this.dom = _dom;
     this._createEditor(codeText);
+    this.Instance!.addAction({
+      id: "ToDesigner",
+      label: "查看设计器",
+      contextMenuGroupId: "navigation",
+      contextMenuOrder: 0,
+      run: function (ed) {
+        vueInstace.showCodeEditingArea = false;
+      },
+    });
   }
   private _createEditor(codeText: string) {
     monaco.languages.typescript.typescriptDefaults.addExtraLib(`
