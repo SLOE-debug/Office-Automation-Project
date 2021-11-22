@@ -5,21 +5,6 @@ importScripts(
   "https://cdnjs.cloudflare.com/ajax/libs/typescript/4.4.4/typescript.js"
 );
 
-var __assign =
-  (this && this.__assign) ||
-  function () {
-    __assign =
-      Object.assign ||
-      function (t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-          s = arguments[i];
-          for (var p in s)
-            if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
-        }
-        return t;
-      };
-    return __assign.apply(this, arguments);
-  };
 /**
  * Loading a default lib as a source file will mess up TS completely.
  * So our strategy is to hide such a text model from TS.
@@ -501,29 +486,6 @@ export class CustomTs2JsWorker extends TypeScriptWorker {
     super(ctx, createData);
   }
   outputLanguageService() {
-    return "";
-  }
-  async printAST(fileName: string) {
-    const thisCode = await this.getScriptText(fileName);
-    let fsMap = await tsvfs.createDefaultMapFromCDN(
-      { target: ts.ScriptTarget.ES2015 },
-      "3.7.3",
-      true,
-      ts
-    );
-    fsMap.set("index.ts", thisCode);
-    const system = tsvfs.createSystem(fsMap);
-    const compilerOpts = {};
-    const env = tsvfs.createVirtualTypeScriptEnvironment(
-      system,
-      ["index.ts"],
-      ts,
-      compilerOpts
-    );
-    console.log(
-      env.languageService.getDocumentHighlights("index.ts", 0, ["index.ts"])
-    );
-
     return "";
   }
 }

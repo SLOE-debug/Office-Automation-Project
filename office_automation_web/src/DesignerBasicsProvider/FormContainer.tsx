@@ -13,6 +13,7 @@ import {
   ControlItemType,
   DragHelperMoveType,
   EqualType,
+  EventItemType,
   JustifyingType,
   PropItemType,
 } from "@/Util/ControlCommonType";
@@ -26,6 +27,12 @@ import { CodeEditor } from "./CodeEditor";
 export default class FormContainer extends Vue {
   @Prop() Controls!: Array<ControlItemType>;
   props: { [x: string]: PropItemType } = {
+    name: {
+      lable: "pageForm",
+      v: "pageForm",
+      des: "pageForm",
+      isHidden: true,
+    },
     width: {
       lable: "宽度",
       v: 800,
@@ -54,6 +61,13 @@ export default class FormContainer extends Vue {
       des: "窗体的背景颜色",
       isStyle: true,
       isColor: true,
+    },
+  };
+  events: { [x: string]: EventItemType } = {
+    onLoad: {
+      lable: "完成事件",
+      des: "当窗体加载完成事件",
+      v: undefined,
     },
   };
   get Style() {
@@ -316,6 +330,15 @@ export default class FormContainer extends Vue {
       this.formContainerAreaDom = this.$parent.$refs.FormContainerAreaDom;
       this.formContainerDomRect =
         this.$refs.FormContainerDom.getBoundingClientRect();
+      this.codeEditor = new CodeEditor(
+        this.$refs["CodeEditingArea"],
+        [
+          "class PageForm implements Form {",
+          "\tcontrols: { [x: string]: Control }",
+          "}",
+        ].join("\n"),
+        this
+      );
     });
   }
 
@@ -326,19 +349,12 @@ export default class FormContainer extends Vue {
   showCodeEditingArea = false;
   @Watch("showCodeEditingArea")
   showCodeEditingAreaWatch(n: boolean, o: boolean) {
-    if (!this.codeEditor) {
+    if (!this.codeEditor?.Instance) {
       this.$nextTick(() => {
-        this.codeEditor = new CodeEditor(
-          this.$refs["CodeEditingArea"],
-          [
-            "class PageForm implements Form {",
-            "\tcontrols: { [x: string]: Control }",
-            "}",
-          ].join("\n"),
-          this
-        );
+        this.codeEditor?.Builder();
       });
     }
+    // this.$parent.GetAllEvents();
   }
 
   globalMenuControlItems = [
@@ -461,7 +477,6 @@ export default class FormContainer extends Vue {
 
   formContainerDomRect = new DOMRect();
   placeTime = 0;
-  // delayPlaceSelectFloatLayer = 0;
   PlaceSelectFloatLayer(e: MouseEvent) {
     if (e.button != 0) return;
     this.placeTime = e.timeStamp;

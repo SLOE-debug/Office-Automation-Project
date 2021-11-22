@@ -145,6 +145,7 @@ export default class DragHelper extends Vue {
   }
 
   SelectNewGamut(e: MouseEvent) {
+    this.hueRect = this.$refs["HuePicker"].getBoundingClientRect();
     let n = e.y - this.hueRect.y;
     if (n >= 0 && n <= this.hueRect.height) this.slidingBlockTop = n;
     this.hue = Math.round((n / this.hueRect.height) * 360 * 100) / 100;
@@ -156,6 +157,7 @@ export default class DragHelper extends Vue {
   }
 
   PlaceNewPosition(e: MouseEvent) {
+    this.PickerAreaRect = this.$refs["PickerArea"].getBoundingClientRect();
     let left = e.x - this.PickerAreaRect.x;
     let top = e.y - this.PickerAreaRect.y;
 
@@ -213,10 +215,6 @@ export default class DragHelper extends Vue {
     if (n) {
       if (this.PickerAreaRect.width == 0)
         this.$nextTick(() => {
-          this.hueRect = this.$refs["HuePicker"].getBoundingClientRect();
-          this.PickerAreaRect = this.$refs[
-            "PickerArea"
-          ].getBoundingClientRect();
           this.UpdateHsvByHex(this.hex);
         });
     }

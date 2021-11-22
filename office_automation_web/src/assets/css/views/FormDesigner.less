@@ -2,6 +2,42 @@
   border: 1px solid #c5c5c5;
   box-sizing: border-box;
 }
+.Center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.RoundedItem {
+  padding: 0 10px;
+  height: 100%;
+  cursor: pointer;
+  border-radius: 50px;
+  margin: 0px 5px;
+}
+.BehaviorListItem {
+  width: 100%;
+  padding: 0px 5px;
+  margin: 5px 0px;
+  cursor: pointer;
+  &:hover {
+    background-color: @propHoverBc;
+  }
+  & > * {
+    float: left;
+  }
+  .lable {
+    width: 30%;
+    text-align: center;
+  }
+  .content {
+    width: 70%;
+    height: 100%;
+    .Center();
+    & > * {
+      width: 100%;
+    }
+  }
+}
 @hoverBc: rgba(121, 121, 121, 0.3);
 @propHoverBc: rgb(6, 123, 239);
 #DesignerWindow {
@@ -20,18 +56,13 @@
       height: 25px;
       &,
       & > * {
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        .Center();
       }
       .ToolsItem {
-        padding: 0 10px;
-        height: 100%;
-        cursor: pointer;
+        .RoundedItem();
         background-color: #009bcf;
-        border-radius: 50px;
         &:hover {
-          background-color: #00B4EF;
+          background-color: #00b4ef;
         }
       }
     }
@@ -53,42 +84,60 @@
     padding: 8px;
     position: relative;
   }
-  .ControlProps {
+  .ControlBehavior {
     .Border();
     width: 12%;
     height: 92%;
     float: right;
     overflow: auto;
-    .PropItem {
+    overflow-x: hidden;
+    .Toggle {
       width: 100%;
-      padding: 0px 5px;
-      margin: 5px 0px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      &:hover {
-        background-color: @propHoverBc;
-      }
+      height: 35px;
+      padding: 5px 0;
+      &,
       & > * {
-        float: left;
+        .Center();
       }
-      .lable {
-        width: 30%;
-        text-align: center;
+      .ToggleItem {
+        .RoundedItem();
+        background-color: @hoverBc;
+        &:hover {
+          background-color: #868b8d;
+        }
       }
-      .content {
-        width: 70%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        & > * {
-          width: 100%;
+      .active {
+        background-color: #009bcf;
+        &:hover {
+          background-color: #009bcf;
         }
       }
     }
-    .ActivatePropItem {
-      background-color: @propHoverBc;
+    .BehaviorContent {
+      width: 200%;
+      height: 100%;
+      & > * {
+        float: left;
+      }
+      .ActivateItem {
+        background-color: @propHoverBc;
+      }
+      .ControlProps {
+        width: 50%;
+        height: 100%;
+        .PropItem {
+          .BehaviorListItem();
+          .Center();
+        }
+      }
+      .ControlEvents {
+        width: 50%;
+        height: 100%;
+        .EventItem {
+          .BehaviorListItem();
+          .Center();
+        }
+      }
     }
   }
   #propDes {
@@ -100,9 +149,7 @@
     padding: 10px;
     color: white;
     font-size: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    .Center();
     text-align: center;
   }
 }

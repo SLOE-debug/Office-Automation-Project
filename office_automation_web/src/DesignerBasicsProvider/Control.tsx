@@ -3,7 +3,11 @@ import { Vue } from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
 import "@/assets/css/DesignerBasicsProvider/Control.less";
 import DragHelper from "./DragHelper";
-import { DragHelperMoveType, PropItemType } from "@/Util/ControlCommonType";
+import {
+  DragHelperMoveType,
+  EventItemType,
+  PropItemType,
+} from "@/Util/ControlCommonType";
 
 /**
  * 递归寻找 Template 组件，如果找到了那么就使用子类Render生成的Jsx.Element替换掉Template
@@ -96,6 +100,7 @@ export default class Control extends Vue {
   }
 
   props: { [x: string]: PropItemType } = {};
+  events: { [x: string]: EventItemType } = {};
   render() {
     return (
       <DragHelper

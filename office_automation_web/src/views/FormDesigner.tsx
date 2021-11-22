@@ -12,10 +12,13 @@ import {
   ControlItemType,
   dragActionType,
   DragType,
+  EventItemType,
+  SelectItemType,
 } from "@/Util/ControlCommonType";
 import { DocumentEventCenter, Guid } from "@/Util/ControlCommonLib";
 import ColorPicker from "@/DesignerBasicsProvider/ColorPicker";
 import Control from "@/DesignerBasicsProvider/Control";
+import { gsap } from "gsap";
 
 @Options({
   components: {
@@ -41,14 +44,14 @@ import Control from "@/DesignerBasicsProvider/Control";
 })
 export default class FormDesigner extends Vue {
   selectedControls: Array<Control> = [];
-  selectedPropDes = "";
+  selectedItemDes = "";
   height = window.innerHeight;
   dragAction: dragActionType = {
     type: DragType.None,
     controlType: "",
     serialNumber: -1,
   };
-  Controls: Array<ControlItemType> = [
+  controls: Array<ControlItemType> = [
     {
       Id: Guid(),
       attr: {
@@ -56,18 +59,7 @@ export default class FormDesigner extends Vue {
           lable: "名称",
           v: "btn_1",
           des: "该控件的唯一名称",
-          onChange: (e: InputEvent) => {
-            if (
-              this.Controls.filter(
-                (c) => c.attr.name.v == (e.target as HTMLInputElement).value
-              ).length == 2
-            ) {
-              message.error({
-                content: "请勿和其他控件名称重名，该名称应该是唯一的！",
-                duration: 5,
-              });
-            }
-          },
+          onChange: this.VerifyName,
         },
         top: {
           lable: "上",
@@ -94,6 +86,19 @@ export default class FormDesigner extends Vue {
     }
   }
 
+  VerifyName(e: InputEvent) {
+    if (
+      this.controls.filter(
+        (c) => c.attr.name.v == (e.target as HTMLInputElement).value
+      ).length == 2
+    ) {
+      message.error({
+        content: "请勿和其他控件名称重名，该名称应该是唯一的！",
+        duration: 5,
+      });
+    }
+  }
+
   PlaceControl(e: DragEvent) {
     let target = e.target as HTMLElement;
     let isDragHelper = target.parentElement?.id == "FormContainer";
@@ -102,26 +107,15 @@ export default class FormDesigner extends Vue {
     if (target.id == "FormContainer" || isDragHelper) {
       let { left, top } = this.GetNewPosition(target, e);
       let controlType = this.dragAction.controlType;
-      let cName = controlType + this.Controls.length;
-      this.Controls.push({
+      let cName = controlType + this.controls.length;
+      this.controls.push({
         Id: Guid(),
         attr: {
           name: {
             lable: "名称",
             v: cName,
             des: "该控件的唯一名称",
-            onChange: (e: InputEvent) => {
-              if (
-                this.Controls.filter(
-                  (c) => c.attr.name.v == (e.target as HTMLInputElement).value
-                ).length == 2
-              ) {
-                message.error({
-                  content: "请勿和其他控件名称重名，该名称应该是唯一的！",
-                  duration: 5,
-                });
-              }
-            },
+            onChange: this.VerifyName,
           },
           top: {
             lable: "上",
@@ -182,7 +176,6 @@ export default class FormDesigner extends Vue {
       let v = parseFloat(target.value).toFixed(2);
       target.value = (parseFloat(v) + n).toFixed(2);
       target.dispatchEvent(new Event("input"));
-      e.stopPropagation();
     }
   }
 
@@ -194,12 +187,13 @@ export default class FormDesigner extends Vue {
     click: this.HiddenMenu,
     mousewheel: this.RollingIncrementOrDecrement,
   };
-  oldProp = {} as any;
-  SelectPropItem(k: string, i: number) {
-    this.selectedPropDes = this.CurrentSelectedControl!.props[k].des;
-    if (this.oldProp) this.oldProp.selected = false;
-    this.CurrentSelectedControl!.props[k].selected = true;
-    this.oldProp = this.CurrentSelectedControl!.props[k];
+  oldItem = {} as any;
+  SelectItem(k: string, selectItemType: SelectItemType) {
+    let Items = (this.CurrentSelectedControl as any)[selectItemType];
+    this.selectedItemDes = Items[k].des;
+    if (this.oldItem) this.oldItem.selected = false;
+    Items[k].selected = true;
+    this.oldItem = Items[k];
   }
 
   WindowResize() {
@@ -214,132 +208,157 @@ export default class FormDesigner extends Vue {
     DocumentEventCenter.call(this, this.documentEvents, true);
   }
 
-  GetPropsFormControls() {
-    let propsFormControls: Array<JSX.Element> = [];
-    if (this.selectedControls.length != 1) return propsFormControls;
+  GetPropsForControls() {
+    let propsForControls: Array<JSX.Element> = [];
+    if (this.selectedControls.length != 1) return propsForControls;
+    if (this.CurrentSelectedControl && this.selectedControls.length == 1) {
+      propsForControls = Object.keys(this.CurrentSelectedControl.props)
+        .filter((k) => !this.CurrentSelectedControl?.props[k].isHidden)
+        .map((k) => {
+          if (this.CurrentSelectedControl) {
+            let m = this.CurrentSelectedControl.props[k];
+            let minNumber = k == "left" || k == "top" ? -100000000 : 0;
+            let minKey = "min" + k.charAt(0).toUpperCase() + k.slice(1);
+            if (this.CurrentSelectedControl.props[minKey])
+              minNumber = this.CurrentSelectedControl.props[minKey].v as number;
 
-    propsFormControls = Object.keys(this.CurrentSelectedControl!.props).map(
-      (k, i) => {
-        let minNumber = k == "left" || k == "top" ? -100000000 : 0;
-        let minKey = "min" + k.charAt(0).toUpperCase() + k.slice(1);
-        if (this.CurrentSelectedControl!.props[minKey])
-          minNumber = this.CurrentSelectedControl!.props[minKey].v as number;
-
-        let propDataType = typeof this.CurrentSelectedControl!.props[k].v;
-        let propFormControl = <></>;
-
-        switch (propDataType) {
-          case "number":
-            propFormControl = (
-              <InputNumber
-                size="small"
-                min={minNumber}
-                step={0.1}
-                precision={2}
-                onChange={(v) => {
-                  if (v == undefined || v == null || v < minNumber)
-                    this.CurrentSelectedControl!.props[k].v = minNumber;
-                }}
-                v-model={[this.CurrentSelectedControl!.props[k].v, "value"]}
-              />
-            );
-            break;
-          case "string":
-            if (this.CurrentSelectedControl!.props[k].isTextarea) {
-              propFormControl = (
-                <aInput.TextArea
-                  size="small"
-                  v-model={[this.CurrentSelectedControl!.props[k].v, "value"]}
-                  onChange={(e: InputEvent) => {
-                    this.CurrentSelectedControl!.props[k].onChange &&
-                      this.CurrentSelectedControl!.props[k].onChange!(e);
-                  }}
-                ></aInput.TextArea>
-              );
-            } else if (this.CurrentSelectedControl!.props[k].isColor) {
-              propFormControl = (
-                <ColorPicker
-                  {...{
-                    value: this.CurrentSelectedControl!.props[k].v,
-                    onChange: (e: string) =>
-                      (this.CurrentSelectedControl!.props[k].v = e),
-                  }}
-                ></ColorPicker>
-              );
-            } else {
-              propFormControl = (
-                <aInput
-                  size="small"
-                  v-model={[this.CurrentSelectedControl!.props[k].v, "value"]}
-                  onChange={(e: InputEvent) => {
-                    this.CurrentSelectedControl!.props[k].onChange &&
-                      this.CurrentSelectedControl!.props[k].onChange!(e);
-                  }}
-                ></aInput>
-              );
+            let propDataType = typeof m.v;
+            let propFormControl = <></>;
+            switch (propDataType) {
+              case "number":
+                propFormControl = (
+                  <InputNumber
+                    size="small"
+                    min={minNumber}
+                    step={0.1}
+                    precision={2}
+                    onChange={(v) => {
+                      if (v == undefined || v == null || v < minNumber)
+                        m.v = minNumber;
+                    }}
+                    v-model={[m.v, "value"]}
+                  />
+                );
+                break;
+              case "string":
+                if (m.isTextarea) {
+                  propFormControl = (
+                    <aInput.TextArea
+                      size="small"
+                      v-model={[m.v, "value"]}
+                      onChange={(e: InputEvent) => {
+                        m.onChange && m.onChange!(e);
+                      }}
+                    ></aInput.TextArea>
+                  );
+                } else if (m.isColor) {
+                  propFormControl = (
+                    <ColorPicker
+                      {...{
+                        value: m.v,
+                        onChange: (e: string) => (m.v = e),
+                      }}
+                    ></ColorPicker>
+                  );
+                } else {
+                  propFormControl = (
+                    <aInput
+                      size="small"
+                      v-model={[m.v, "value"]}
+                      onChange={(e: InputEvent) => {
+                        m.onChange && m.onChange!(e);
+                      }}
+                    ></aInput>
+                  );
+                }
+                break;
+              case "object":
+                propFormControl = (
+                  <aSelect
+                    v-model={[m.dataValue, "value"]}
+                    size="small"
+                    allowClear
+                  >
+                    {Object.keys(m.v).map((pk) => (
+                      <aSelect.Option value={(m.v as any)[pk]}>
+                        {pk}
+                      </aSelect.Option>
+                    ))}
+                  </aSelect>
+                );
+                break;
+              case "boolean":
+                propFormControl = (
+                  <Switch
+                    v-model={[m.v, "checked"]}
+                    checkedChildren={"开"}
+                    unCheckedChildren={"关"}
+                  ></Switch>
+                );
+                break;
             }
-            break;
-          case "object":
-            propFormControl = (
-              <aSelect
-                v-model={[
-                  this.CurrentSelectedControl!.props[k].dataValue,
-                  "value",
-                ]}
-                size="small"
-                allowClear
+            return (
+              <div
+                class={"PropItem" + (m.selected ? " ActivateItem" : "")}
+                onMouseenter={() => {
+                  this.SelectItem(k, SelectItemType.Prop);
+                }}
               >
-                {Object.keys(this.CurrentSelectedControl!.props[k].v).map(
-                  (pk) => (
-                    <aSelect.Option
-                      value={
-                        (this.CurrentSelectedControl!.props[k].v as any)[pk]
-                      }
-                    >
-                      {pk}
-                    </aSelect.Option>
-                  )
-                )}
-              </aSelect>
+                <div class="lable">{m.lable}</div>
+                <div class="content" key={this.CurrentSelectedControl.Id}>
+                  {propFormControl}
+                </div>
+              </div>
             );
-            break;
-          case "boolean":
-            propFormControl = (
-              <Switch
-                v-model={[this.CurrentSelectedControl!.props[k].v, "checked"]}
-                checkedChildren={"开"}
-                unCheckedChildren={"关"}
-              ></Switch>
-            );
-            break;
-        }
-        return (
+          }
+        }) as Array<JSX.Element>;
+    }
+    return propsForControls;
+  }
+
+  GetEventsForControls() {
+    let eventForControls: Array<JSX.Element> = [];
+    if (this.CurrentSelectedControl && this.selectedControls.length == 1) {
+      eventForControls = Object.keys(this.CurrentSelectedControl.events).map(
+        (k) => (
           <div
             class={
-              "PropItem" +
-              (this.CurrentSelectedControl!.props[k].selected
-                ? " ActivatePropItem"
+              "EventItem" +
+              (this.CurrentSelectedControl!.events[k].selected
+                ? " ActivateItem"
                 : "")
             }
             onMouseenter={() => {
-              this.SelectPropItem(k, i);
+              this.SelectItem(k, SelectItemType.Event);
             }}
           >
             <div class="lable">
-              {this.CurrentSelectedControl!.props[k].lable}
+              {this.CurrentSelectedControl?.events[k].lable}
             </div>
-            <div class="content" key={this.CurrentSelectedControl!.Id}>
-              {propFormControl}
+            <div
+              class="content"
+              onDblclick={() => {
+                this.AddEvents(this.CurrentSelectedControl?.events[k]!, k);
+              }}
+            >
+              <a-select
+                v-model={[this.CurrentSelectedControl!.events[k].v, "value"]}
+                options={this.allEvents}
+                size="small"
+                allowClear
+                show-search
+              ></a-select>
             </div>
           </div>
-        );
-      }
-    );
-    return propsFormControls;
+        )
+      );
+    }
+    return eventForControls;
   }
 
   Preview(e: MouseEvent) {
-    this.Controls.forEach((c) => {
+    return;
+    this.controls.forEach((c) => {
       console.log(
         this.$refs["FormContainer"].$refs[c.attr.name.v.toString()].props
       );
@@ -347,13 +366,59 @@ export default class FormDesigner extends Vue {
     e.stopPropagation();
   }
 
+  CodeActivated() {
+    return !!this.$refs["FormContainer"].codeEditor;
+  }
+
+  async GetAllEvents() {
+    this.allEvents = (
+      await this.$refs["FormContainer"].codeEditor?.GetAllEvents()
+    )?.map((e: string) => {
+      return { label: e, value: e };
+    });
+  }
+
+  controlBehaviorOffset = 0;
+  allEvents: Array<{ label: string; value: string }> = [];
+  ChangeControlBehavior(n: number) {
+    this.controlBehaviorOffset = n;
+    if (n) this.GetAllEvents();
+    gsap.to(".ControlProps", {
+      duration: 0.5,
+      ease: "power1.inOut",
+      marginLeft: n ? -this.$refs["BehaviorContent"].scrollWidth : 0,
+    });
+  }
+
+  AddEvents(itemInfo: EventItemType, eventType: string) {
+    if (!!itemInfo.v) return;
+    let eventName = `${
+      this.CurrentSelectedControl?.props.name.v
+    }_${eventType.substr(2)}`;
+    let eventBlock = `\tprivate ${eventName}(sender: object, e: Event) {\n\n\t}`;
+    if (!this.$refs["FormContainer"].showCodeEditingArea)
+      this.$refs["FormContainer"].showCodeEditingArea = true;
+    setTimeout(() => {
+      if (this.$refs["FormContainer"].codeEditor.addLine(eventBlock)) {
+        this.GetAllEvents();
+        itemInfo.v = eventName;
+      } else {
+        message.error("未成功添加事件，无法定位到添加点。", 3);
+      }
+    }, 0);
+  }
+
   render() {
-    let props: Array<JSX.Element> = this.GetPropsFormControls();
+    let props: Array<JSX.Element> = this.GetPropsForControls();
     return (
       <div style={`height:${this.height}px`} id="DesignerWindow">
         <div class="ControlList">
           <div class="Tools">
-            <div class="ToolsItem" onClick={this.Preview}>
+            <div
+              class="ToolsItem"
+              style="background-color:#868b8d"
+              onClick={this.Preview}
+            >
               预览
             </div>
           </div>
@@ -375,7 +440,7 @@ export default class FormDesigner extends Vue {
         <div id="FormContainerArea" ref="FormContainerAreaDom">
           <FormContainer
             {...{
-              Controls: this.Controls,
+              Controls: this.controls,
               ref: "FormContainer",
               onSelectControl: (controls: Array<Control>) => {
                 this.selectedControls = controls;
@@ -383,8 +448,29 @@ export default class FormDesigner extends Vue {
             }}
           ></FormContainer>
         </div>
-        <div class="ControlProps">{...props}</div>
-        <div id="propDes">{this.selectedPropDes}</div>
+        <div class="ControlBehavior">
+          <div class="Toggle">
+            <div
+              class={`ToggleItem ${this.controlBehaviorOffset ? "" : "active"}`}
+              onClick={() => this.ChangeControlBehavior(0)}
+            >
+              属性
+            </div>
+            <div
+              class={`ToggleItem ${this.controlBehaviorOffset ? "active" : ""}`}
+              onClick={() => this.ChangeControlBehavior(1)}
+            >
+              事件
+            </div>
+          </div>
+          <div class="BehaviorContent" ref="BehaviorContent">
+            <div class="ControlProps">
+              <div>{...props}</div>
+            </div>
+            <div class="ControlEvents">{...this.GetEventsForControls()}</div>
+          </div>
+        </div>
+        <div id="propDes">{this.selectedItemDes}</div>
       </div>
     );
   }

@@ -1,9 +1,4 @@
 import { Api } from "./plugins/GlobalAxiosConfig";
-import {
-  ContextMenuItemType,
-  ContextMenuPosType,
-  PhysicalResourceItemType,
-} from "./Util/ControlCommonType";
 
 declare module "@vue/runtime-core" {
   export interface ComponentCustomProperties {

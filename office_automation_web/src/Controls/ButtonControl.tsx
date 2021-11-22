@@ -1,5 +1,5 @@
 import Control, { Include } from "@/DesignerBasicsProvider/Control";
-import { PropItemType } from "@/Util/ControlCommonType";
+import { EventItemType, PropItemType } from "@/Util/ControlCommonType";
 import { Button } from "ant-design-vue";
 
 @Include
@@ -30,6 +30,18 @@ export default class ButtonControl extends Control {
       lable: "危险按钮",
       v: false,
       des: "按钮的样式是否是危险的",
+    },
+  };
+  events: { [x: string]: EventItemType } = {
+    onClick: {
+      lable: "单击事件",
+      des: "当控件被按下时触发的事件",
+      v: undefined,
+    },
+    onDblclick: {
+      lable: "双击事件",
+      des: "当控件被双击时触发的事件",
+      v: undefined,
     },
   };
   created() {

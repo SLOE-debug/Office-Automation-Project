@@ -12,6 +12,13 @@ export type PropItemType = {
   onChange?: Function;
   isColor?: boolean;
   isTextarea?: boolean;
+  isHidden?: boolean;
+  selected?: boolean;
+};
+export type EventItemType = {
+  lable: string;
+  v: string | undefined;
+  des: string;
   selected?: boolean;
 };
 
@@ -31,6 +38,11 @@ export enum DragHelperMoveType {
 export enum DragType {
   Place = "Place",
   None = "",
+}
+
+export enum SelectItemType {
+  Prop = "props",
+  Event = "events",
 }
 
 export type ContextMenuItemType = {
