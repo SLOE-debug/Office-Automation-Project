@@ -354,7 +354,6 @@ export default class FormContainer extends Vue {
         this.codeEditor?.Builder();
       });
     }
-    // this.$parent.GetAllEvents();
   }
 
   globalMenuControlItems = [

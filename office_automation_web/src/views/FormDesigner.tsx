@@ -366,10 +366,6 @@ export default class FormDesigner extends Vue {
     e.stopPropagation();
   }
 
-  CodeActivated() {
-    return !!this.$refs["FormContainer"].codeEditor;
-  }
-
   async GetAllEvents() {
     this.allEvents = (
       await this.$refs["FormContainer"].codeEditor?.GetAllEvents()
