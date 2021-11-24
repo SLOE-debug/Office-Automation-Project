@@ -12,6 +12,7 @@
 #### 软件架构
 
 后端：Net Core5.0+EF6.0（多数据库提供程序兼容：mysql/sqlserver/orcle）+自定义控制器属性注入、IOC容器注入、全局Redis缓存管理
+
 前端：Vue3+Ts的简单使用
 
 
